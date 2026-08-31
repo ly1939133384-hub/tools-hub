@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>碳管导热垫配方计算器 v1.0</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Microsoft YaHei', 'Geist', system-ui, sans-serif; background: #faf9f6; color: #2d3142; padding: 2rem 1rem; }
+  .frame { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.3rem; }
+  .sub { color: #5b6574; font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .card { background: #fff; border: 1px solid rgba(45,49,66,0.12); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+  .card h2 { font-size: 1.05rem; margin-bottom: 0.8rem; color: #2d3142; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.5rem; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem 1.5rem; }
+  label { display: block; font-size: 0.8rem; color: #5b6574; margin-bottom: 0.25rem; }
+  input, select { width: 100%; padding: 0.45rem 0.6rem; border: 1px solid rgba(45,49,66,0.25); border-radius: 6px; font-size: 0.95rem; font-family: inherit; }
+  input:focus { outline: 2px solid #c25e2a33; border-color: #c25e2a; }
+  .hint { font-size: 0.72rem; color: #8a94a6; margin-top: 0.2rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td { padding: 0.5rem 0.6rem; text-align: left; border-bottom: 1px solid rgba(45,49,66,0.1); }
+  th { background: rgba(45,49,66,0.04); font-size: 0.8rem; color: #5b6574; }
+  td.num { font-family: 'Geist Mono', Consolas, monospace; text-align: right; }
+  .total { font-weight: 600; background: rgba(194,94,42,0.06); }
+  .badge { display: inline-block; background: #c25e2a; color: #fff; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 20px; font-weight: 500; }
+  .note { font-size: 0.78rem; color: #5b6574; background: rgba(45,49,66,0.04); border-left: 3px solid #c25e2a; padding: 0.6rem 0.8rem; border-radius: 0 6px 6px 0; margin-top: 0.8rem; }
+  .btn { background: #c25e2a; color: #fff; border: none; padding: 0.5rem 1.2rem; border-radius: 6px; font-size: 0.9rem; cursor: pointer; margin-top: 0.8rem; }
+  .btn:hover { background: #a84e22; }
+  .tab { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .tab button { padding: 0.4rem 1.2rem; border: 1px solid rgba(45,49,66,0.2); background: #fff; border-radius: 20px; font-size: 0.85rem; cursor: pointer; color: #5b6574; }
+  .tab button.active { background: #c25e2a; color: #fff; border-color: #c25e2a; }
+  .highlight { color: #c25e2a; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <h1>🧪 碳管垂直导热垫 · 配方计算器 <span class="badge">v1.0</span></h1>
+  <div class="sub">基于加成型液体硅橡胶体系（Si-H:Vi = 1.5:1 摩尔比）· 修改 CNT 用量联动全配方 · 复刻自论文1 (CST 2026) / 论文3 (ASS 2023)</div>
+
+  <div class="card">
+    <h2>① 自变量（你改这里）</h2>
+    <div class="grid">
+      <div>
+        <label>碳管 CNT 用量 (phr, 相对100份硅油)</label>
+        <input id="cnt_phr" type="number" value="15" min="5" max="25" step="1" oninput="calc()">
+        <div class="hint">建议 10-20 phr（双审结论）；15 为中值</div>
+      </div>
+      <div>
+        <label>批量规模（乙烯基硅油基准 g）</label>
+        <input id="batch" type="number" value="10" min="5" max="100" step="5" oninput="calc()">
+        <div class="hint">每批硅油用多少克；10g 起步，最小可 20g（称量更稳）</div>
+      </div>
+    </div>
+    <div class="grid3" style="margin-top:0.75rem">
+      <div>
+        <label>乙烯基硅油 Vi 含量 (mmol/g)</label>
+        <input id="vi_content" type="number" value="0.5" min="0.1" max="2" step="0.05" oninput="calc()">
+        <div class="hint">问供应商要（TDS 必填项）</div>
+      </div>
+      <div>
+        <label>含氢硅油 Si-H 含量 (mmol/g)</label>
+        <input id="sih_content" type="number" value="8" min="1" max="15" step="0.5" oninput="calc()">
+        <div class="hint">问供应商要（TDS 必填项）</div>
+      </div>
+      <div>
+        <label>铂金母液浓度 (ppm Pt)</label>
+        <input id="pt_conc" type="number" value="3000" min="500" max="10000" step="500" oninput="calc()">
+        <div class="hint">3000 或 5000 常见</div>
+      </div>
+    </div>
+    <div class="grid3" style="margin-top:0.75rem">
+      <div>
+        <label>Si-H:Vi 摩尔比</label>
+        <input id="ratio" type="number" value="1.5" min="1" max="2" step="0.1" oninput="calc()">
+        <div class="hint">1.2-1.8 区间，1.5 居中（机理见文末）</div>
+      </div>
+      <div>
+        <label>Pt 目标浓度 (ppm Pt, 对硅油)</label>
+        <input id="pt_target" type="number" value="15" min="5" max="50" step="5" oninput="calc()">
+        <div class="hint">10-20 ppm（双审意见）</div>
+      </div>
+      <div>
+        <label>Al₂O₃ 用量 (phr)</label>
+        <input id="al2o3_phr" type="number" value="100" min="0" max="200" step="10" oninput="calc()">
+        <div class="hint">论文3 为 20份SCF:140份PDMS:28份Al ≈ Al 100phr 级</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>② 计算结果（按下列入 = 一锅完整的锅）</h2>
+    <table id="result">
+      <thead><tr><th>组分</th><th>用量</th><th>占总量 wt%</th><th>说明</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="note" id="note"></div>
+  </div>
+
+  <div class="card">
+    <h2>③ 化学机理速查（Si-H / Vi / Pt 怎么配合）</h2>
+    <table>
+      <tr><th>角色</th><th>分子结构</th><th>干什么</th></tr>
+      <tr><td><b>乙烯基硅油 (Vi)</b></td><td>PDMS 主链挂 -CH=CH₂</td><td>提供"抓手"，交联点</td></tr>
+      <tr><td><b>含氢硅油 (Si-H)</b></td><td>PDMS 主链挂 -Si-H</td><td>提供"钥匙"，与 Vi 加成</td></tr>
+      <tr><td><b>铂催化剂 (Pt)</b></td><td>Karstedt 型 Pt(0) 络合物</td><td>钥匙插锁的"手"，催化硅氢加成</td></tr>
+      <tr><td><b>抑制剂 (ETCH)</b></td><td>乙炔基环己醇</td><td>暂时"捂住"Pt 的手，室温拖住固化，加热才放开</td></tr>
+    </table>
+    <div class="note">
+      <b>反应（硅氢加成 Hydrosilylation）</b>：Si–H + CH₂=CH–Si ≡ → Pt催化 → Si–CH₂–CH₂–Si ≡（一个 Si-H 和一个乙烯基交联成一个键）<br>
+      <b>Si-H:Vi=1.5:1 怎么来</b>：化学计量是 1:1，但实际取 1.2-1.8 过量——① Si-H 会被微量水汽消耗副反应 ② 高填充下部分 Vi 被填料"盖住"接触不到 ③ 过量保证交联完全（表面不粘、强度够）。<b>别超过 2</b>：残留 Si-H 遇水放氢（发泡）+ 储存不稳定。1.5 是行业常用的居中保险值。
+    </div>
+  </div>
+</div>
+
+<script>
+function fmt(v, d=2) {
+  if (v === 0) return "0";
+  if (Math.abs(v) < 0.005) return v.toFixed(3);
+  return v.toFixed(d);
+}
+function calc() {
+  const get = id => parseFloat(document.getElementById(id).value) || 0;
+  const cnt_phr = get('cnt_phr'), batch = get('batch');
+  const vi_c = get('vi_content'), sih_c = get('sih_content');
+  const pt_conc = get('pt_conc'), ratio = get('ratio'), pt_target = get('pt_target');
+  const al2o3_phr = get('al2o3_phr');
+
+  const siloxane = batch;                 // 乙烯基硅油 g（基准 100phr = batch g）
+  // 含氢硅油: 按 Si-H/Vi 摩尔比换算
+  const vi_mmol = siloxane * vi_c;        // 乙烯基总量 mmol
+  const sih_mmol = vi_mmol * ratio;       // 需要的 Si-H mmol
+  const crosslink = sih_mmol / sih_c;     // 含氢硅油 g
+  // 抑制剂: 固定 0.1 phr (对硅油)
+  const inhibitor = siloxane * 0.001;     // 0.1 phr → 硅油×0.001
+  // 填料
+  const cnt = siloxane * (cnt_phr / 100);
+  const al2o3 = siloxane * (al2o3_phr / 100);
+  // 铂催化剂(2026-08-27 P0修复): ppm 按"实时总投料质量"(全料)计算——行业惯例, 原按硅油算会少投约44%
+  const full_base = siloxane + crosslink + inhibitor + cnt + al2o3;  // 除 Pt 自身外的全料质量
+  const pt_metal_g = (pt_target / 1e6) * full_base;   // 纯 Pt 克数 (按全料)
+  const pt_solution = pt_metal_g / (pt_conc / 1e6);   // 母液克数
+
+  const rows = [
+    ['乙烯基硅油', siloxane, '基体（基准）'],
+    ['含氢硅油', crosslink, `Si-H:Vi=${ratio}:1 → 需 Si-H ${fmt(sih_mmol)} mmol`],
+    ['铂金母液', pt_solution, `目标 ${pt_target} ppm Pt · 按全料${fmt(full_base)}g 算（母液 ${pt_conc} ppm）`],
+    ['抑制剂 ETCH', inhibitor, '0.1 phr（操作窗口调节，可从 0.05-0.2 试）'],
+    ['碳管 CNT', cnt, `${cnt_phr} phr（自变量）`],
+    ['球形 Al₂O₃', al2o3, `${al2o3_phr} phr（已有，单粒径先做）`],
+  ];
+  const total = rows.reduce((s, r) => s + r[1], 0);
+  let html = '';
+  for (const [name, val, note] of rows) {
+    html += `<tr><td>${name}</td><td class="num">${fmt(val)} g</td><td class="num">${fmt(val/total*100)}%</td><td>${note}</td></tr>`;
+  }
+  html += `<tr class="total"><td>合计（一锅）</td><td class="num">${fmt(total)} g</td><td class="num">100%</td><td>约 ${fmt(total,0)} g 总料</td></tr>`;
+  document.getElementById('tbody').innerHTML = html;
+
+  // 校验提示
+  let warn = [];
+  if (cnt_phr > 20) warn.push(`⚠️ CNT ${cnt_phr}phr 超过 20 上限（双审：超过大概率粘度爆炸搅不动）`);
+  if (vi_c <= 0 || sih_c <= 0) warn.push('⚠️ 未填 Vi/Si-H 含量——配方无法闭合！向供应商要 TDS');
+  if (ratio > 3) warn.push(`⚠️ Si-H:Vi=${ratio} 超过 3——氢过量+氧化铝表面羟基/微量水 → Pt催化放H₂ → 成品起泡变海绵！`);
+  if (ratio < 1.2) warn.push(`⚠️ Si-H:Vi=${ratio} 偏低（<1.2）——交联不完全，表面发粘`);
+  const pt_mg = pt_metal_g * 1000;
+  if (pt_mg < 50) warn.push(`⚠️ 铂金母液仅 ${fmt(pt_solution,3)}g（${fmt(pt_mg,1)}mg Pt），电子秤称不准！建议批量加大到 20g+ 或先把母液稀释到 300ppm 再下料`);
+  if (inhibitor < 0.01) warn.push(`⚠️ 抑制剂 ${fmt(inhibitor,3)}g 同样称不准，批量 ≥20g 或配稀释液`);
+  // 体积分数估算 (P1, glm 意见): 密度 硅油0.97 / CNT真2.1 / Al2O3 3.95 / 含氢0.98 / Pt母液≈1.0
+  const v_sil = siloxane / 0.97, v_x = crosslink / 0.98, v_inh = inhibitor / 1.0;
+  const v_cnt = cnt / 2.1, v_al = al2o3 / 3.95, v_pt = pt_solution / 1.0;
+  const v_total = v_sil + v_x + v_inh + v_cnt + v_al + v_pt;
+  const filler_vol = (v_cnt + v_al) / v_total * 100;
+  warn.push(`📐 填料体积分数 ≈ ${fmt(filler_vol)} vol%（CNT ${fmt(v_cnt/v_total*100,1)} + Al₂O₃ ${fmt(v_al/v_total*100,1)}）`);
+  if (filler_vol > 40) warn.push(`⚠️ 填料体积 >40 vol%——高填充体系擀饼会很费力，注意分步加粉`);
+  warn.push(`🔧 CNT 蓬松（堆密度极低），${fmt(cnt,2)}g 体积不小——必须先与少量硅油研磨成膏再并入主料`);
+  warn.push(`🔧 混料全程室温！加 Pt 后计时；固化 60℃×1h → 120℃×2h 两段（普通烘箱即可）`);
+  warn.push(`🔧 每批浇筑前真空脱泡（-0.09MPa×10min），无真空也至少静置+刮泡`);
+  document.getElementById('note').innerHTML = warn.join('<br>');
+}
+calc();
+</script>
+</body>
+</html>

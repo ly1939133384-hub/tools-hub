@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>林工工具箱 · 我的小工具集</title>
+<style>
+  :root { --bg: #f5f6fa; --card: #fff; --accent: #ff8c1a; --text: #2c3e50; --sub: #7f8c8d; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: var(--bg); color: var(--text); padding: 30px 16px 60px; }
+  .header { text-align: center; margin-bottom: 32px; }
+  .header h1 { font-size: 26px; margin-bottom: 8px; }
+  .header h1 .emoji { font-size: 30px; }
+  .header p { color: var(--sub); font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; max-width: 960px; margin: 0 auto; }
+  .card { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.06); text-decoration: none; color: inherit; display: block; transition: transform .15s, box-shadow .15s; border-left: 4px solid var(--accent); }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,.1); }
+  .card .icon { font-size: 26px; margin-bottom: 8px; }
+  .card h3 { font-size: 17px; margin-bottom: 6px; }
+  .card p { font-size: 13px; color: var(--sub); line-height: 1.6; }
+  .card .tag { display: inline-block; font-size: 11px; color: var(--accent); border: 1px solid var(--accent); border-radius: 10px; padding: 1px 8px; margin-top: 10px; }
+  .placeholder { border-left-color: #ccc; opacity: .6; cursor: default; }
+  .placeholder:hover { transform: none; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .footer { text-align: center; margin-top: 40px; color: #aaa; font-size: 12px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1><span class="emoji">🧰</span> 林工工具箱</h1>
+    <p>我的小工具集 · 手机电脑都能用 · 持续添加中</p>
+  </div>
+  <div class="grid">
+    <a class="card" href="minesweeper-drill/">
+      <div class="icon">🧨</div>
+      <h3>扫雷定式做题器</h3>
+      <p>58 道扫雷定式训练题（L1-L3 + 实战残局），练减法归约与差集推理，附口语化讲解。</p>
+      <span class="tag">在线可用</span>
+    </a>
+    <div class="card placeholder">
+      <div class="icon">🛠️</div>
+      <h3>更多工具待添加</h3>
+      <p>把新的 HTML 小工具放进 tools-hub 仓库子文件夹，这里就会自动出现新入口。</p>
+    </div>
+  </div>
+  <div class="footer">林工工具箱 · 由 GitHub Pages 免费托管</div>
+</body>
+</html>

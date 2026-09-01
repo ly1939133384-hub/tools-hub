@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>红均格反推 V1 · 俱乐大玩家</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --panel: #ffffff;
+    --line: #d9dee5;
+    --text: #22272e;
+    --sub: #6b7785;
+    --accent: #e8590c;
+    --accent-dark: #c74e0a;
+    --green: #188038;
+    --green-bg: #e6f4ea;
+    --warn-bg: #fff8e6;
+    --warn-line: #f0c36d;
+    --err-bg: #fdecea;
+    --err-line: #f5b5b5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px 12px 60px;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 24px; line-height: 1.4; }
+  .subtitle { color: var(--sub); font-size: 14px; margin: 4px 0 18px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  }
+  .card h2 { font-size: 18px; margin-bottom: 10px; }
+  .field { margin-bottom: 12px; }
+  label { display: block; font-size: 14px; color: var(--sub); margin-bottom: 4px; }
+  input[type=text], input[type=number], select {
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 1px solid #b6c2cf;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: inherit;
+    background: #fff;
+    color: var(--text);
+  }
+  input:focus, select:focus { outline: 2px solid rgba(232,89,12,.25); border-color: var(--accent); }
+  .inline-fields { display: flex; gap: 8px; flex-wrap: wrap; }
+  .inline-fields .field { flex: 1 1 140px; }
+  .radio-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .radio-row label {
+    display: flex; align-items: center; gap: 6px;
+    min-height: 44px; padding: 6px 12px;
+    border: 1px solid #b6c2cf; border-radius: 8px;
+    background: #fff; cursor: pointer; color: var(--text); font-size: 15px;
+  }
+  .radio-row input { width: 18px; height: 18px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 8px 16px;
+    border: none; border-radius: 8px;
+    font-size: 16px; font-family: inherit; cursor: pointer;
+    background: #e8ebf0; color: var(--text); text-decoration: none;
+  }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-dark); }
+  .btn.green { background: var(--green); color: #fff; }
+  .btn.danger { background: #fff; color: #c62828; border: 1px solid #e0a0a0; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .constraint-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #eef1f5; border: 1px solid #d4dae1; border-radius: 20px;
+    padding: 4px 6px 4px 12px; font-size: 14px;
+  }
+  .tag button {
+    width: 28px; height: 28px; min-height: 28px;
+    border: none; border-radius: 50%; background: #d8dee6;
+    color: #555; font-size: 14px; cursor: pointer; line-height: 1;
+  }
+  .result-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .count { font-size: 22px; font-weight: 700; }
+  .count .num { color: var(--accent); }
+  .warn { background: var(--warn-bg); border: 1px solid var(--warn-line); color: #7a5a00; padding: 8px 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
+  .err { background: var(--err-bg); border: 1px solid var(--err-line); color: #b42318; padding: 8px 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
+  .status { color: var(--sub); font-size: 14px; margin-top: 6px; min-height: 22px; }
+  .cand-list { margin-top: 10px; }
+  .cand-row {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 44px; padding: 6px 10px;
+    border: 1px solid #e1e5ea; border-radius: 8px; margin-bottom: 6px;
+    background: #fbfcfe; font-size: 16px;
+  }
+  .cand-row .combo { font-family: Consolas, Menlo, monospace; }
+  .cand-row.single { background: var(--green-bg); border-color: #7fd1a0; font-weight: 600; }
+  .cand-row .copy-btn { min-height: 36px; padding: 4px 10px; font-size: 14px; }
+  .truncated { color: #b26a00; font-size: 14px; margin-top: 8px; }
+  .collapse-btn { margin-top: 10px; }
+  .footer { text-align: center; color: #999; font-size: 12px; margin-top: 28px; }
+  .manual-copy {
+    width: 100%; min-height: 80px; margin-top: 8px; padding: 8px;
+    border: 1px solid #b6c2cf; border-radius: 8px; font-size: 14px;
+    font-family: Consolas, Menlo, monospace;
+  }
+  @media (max-width: 480px) {
+    body { padding: 12px 6px 40px; }
+    .card { padding: 12px; }
+    h1 { font-size: 21px; }
+    .btn-row .btn { flex: 1 1 45%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔴 红均格反推</h1>
+  <div class="subtitle">俱乐大玩家 · 纯本地枚举 · 每轮输入红均格与已知约束，逐步逼近唯一解</div>
+
+  <div class="card">
+    <h2>⚙️ 开局设置</h2>
+    <div class="field">
+      <label for="templateSel">模板</label>
+      <select id="templateSel">
+        <option value="full">完整集合（1,2,3,4,6,8,9,12,15,16）</option>
+        <option value="concise">精简集合（1,2,3,4,6,8,12）</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="SInput">格子种类集合 S（逗号分隔，可编辑）</label>
+      <input id="SInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="1,2,3,4,6,8,9,12,15,16">
+    </div>
+    <div class="field">
+      <label>总格数 T 口径</label>
+      <div class="radio-row" id="tmodeRow">
+        <label><input type="radio" name="tmode" value="none" checked>不使用总格数</label>
+        <label><input type="radio" name="tmode" value="sumEq">红色总和=总格数</label>
+        <label><input type="radio" name="tmode" value="sumLe">红色总和≤总格数</label>
+      </div>
+    </div>
+    <div class="inline-fields">
+      <div class="field">
+        <label for="TInput">总格数 T</label>
+        <input id="TInput" type="number" min="0" max="500" step="1" inputmode="numeric" placeholder="不使用可留空">
+      </div>
+      <div class="field">
+        <label for="capInput">红色物品数量上限（默认 10）</label>
+        <input id="capInput" type="number" min="1" max="50" step="1" value="10" inputmode="numeric">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📥 每轮录入 <span id="roundBadge" style="color:var(--sub);font-size:14px;font-weight:normal">（当前：第 0 轮后）</span></h2>
+    <div class="inline-fields">
+      <div class="field">
+        <label for="rInput">红均格 r（去尾一位小数）</label>
+        <input id="rInput" type="number" step="0.1" min="0" inputmode="decimal" placeholder="例如 1.5" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="conType">约束类型</label>
+        <select id="conType">
+          <option value="exist">已知某物品占 X 格</option>
+          <option value="count1">新增 N 个 1 格物品（1格物品=N）</option>
+          <option value="total">已知红色物品总数（高级）</option>
+        </select>
+      </div>
+      <div class="field" style="min-width:110px">
+        <label for="conVal">数值</label>
+        <input id="conVal" type="number" min="1" step="1" inputmode="numeric" placeholder="X / N">
+      </div>
+    </div>
+    <button class="btn primary" id="btnAddConstraint" style="width:100%;margin-top:4px">➕ 添加约束</button>
+    <div class="constraint-tags" id="constraintTags"></div>
+    <div class="btn-row">
+      <button class="btn green" id="btnNext">下一轮（提交并快照）</button>
+      <button class="btn" id="btnUndo">↩️ 撤销上一轮</button>
+      <button class="btn danger" id="btnReset">🧹 清空本局/恢复默认</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="result-head">
+      <div class="count">当前候选：<span class="num" id="candCount">-</span> 种</div>
+      <button class="btn primary" id="btnCopyAll">📋 复制全部</button>
+    </div>
+    <div class="status" id="status">请先输入红均格，或修改约束后自动计算。</div>
+    <div id="warnBox"></div>
+    <div class="cand-list" id="candList"></div>
+    <div id="manualBox"></div>
+  </div>
+
+  <div class="footer">红均格反推 V1 · 零依赖纯本地计算 · 数据只存当前浏览器</div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORAGE_KEY = 'redAvgSolver_v1';
+  var VERSION = 1;
+  var DEFAULT_S = [1, 2, 3, 4, 6, 8, 9, 12, 15, 16];
+  var CONCISE_S = [1, 2, 3, 4, 6, 8, 12];
+  var MAX_NODES = 500000;
+  var MAX_T = 80;
+  var WARN_CANDIDATES = 200;
+  var COLLAPSE_THRESHOLD = 50;
+  var COLLAPSE_SHOW = 20;
+  var MAX_UNDO = 50;
+
+  var state = defaultState();
+  var undoStack = [];
+  var expanded = false;
+  var computing = false;
+  var computeTimer = null;
+
+  function defaultState() {
+    return {
+      version: VERSION,
+      S: DEFAULT_S.slice(),
+      tmode: 'none',
+      T: '',
+      cap: 10,
+      round: 0,
+      r: '',
+      constraints: [],
+      candidates: []
+    };
+  }
+
+  // ---------- DOM ----------
+  function $(id) { return document.getElementById(id); }
+
+  // ---------- 解析 / 校验 ----------
+  function parseS(raw) {
+    var parts = String(raw || '').split(/[,，、\s]+/);
+    var arr = [];
+    for (var i = 0; i < parts.length; i++) {
+      var v = parts[i].trim();
+      if (!v) continue;
+      var n = Number(v);
+      if (!Number.isInteger(n) || n <= 0) return null;
+      if (arr.indexOf(n) === -1) arr.push(n);
+    }
+    if (!arr.length) return null;
+    arr.sort(function (a, b) { return a - b; });
+    return arr;
+  }
+
+  function parseR(raw) {
+    var s = String(raw == null ? '' : raw).trim();
+    if (s === '') return null;
+    var n = Number(s);
+    if (!isFinite(n) || n < 0) return null;
+    // 去尾写死：只取十分位，例如 1.56 也按 1.5 参与匹配
+    return Math.floor(n * 10 + 1e-9);
+  }
+
+  function validateSettings() {
+    var S = parseS($('SInput').value);
+    if (!S) return { ok: false, msg: '格子集合 S 格式不对：请输入正整数，逗号分隔。' };
+    var tmode = document.querySelector('input[name=tmode]:checked').value;
+    var T = $('TInput').value === '' ? '' : Number($('TInput').value);
+    var cap = $('capInput').value === '' ? '' : Number($('capInput').value);
+
+    if (tmode !== 'none') {
+      if (T === '' || !Number.isInteger(T) || T <= 0) {
+        return { ok: false, msg: '已选择使用总格数，请填写正整数 T。' };
+      }
+    } else {
+      T = '';
+    }
+    if (cap === '' || !Number.isInteger(cap) || cap <= 0) {
+      return { ok: false, msg: '请填写红色物品数量上限（不使用总格数时必填；默认 10）。' };
+    }
+    if (cap > 50) {
+      return { ok: false, msg: '红色物品数量上限不能超过 50。' };
+    }
+    if (tmode !== 'none' && Number(T) > MAX_T) {
+      return { ok: false, msg: '总格数 T 超过 ' + MAX_T + '，请先收紧或改选“不使用总格数”。' };
+    }
+    return { ok: true, S: S, tmode: tmode, T: T, cap: cap };
+  }
+
+  // ---------- 枚举引擎 ----------
+  function enumerateCandidates(S, rTenth, tmode, T, cap) {
+    var nodes = 0;
+    var results = [];
+    var maxS = S[S.length - 1];
+    var n;
+
+    for (n = 1; n <= cap; n++) {
+      var lo = Math.ceil(n * rTenth / 10);
+      var hi = Math.floor((n * (rTenth + 1) - 1) / 10);
+      if (lo > hi) continue;
+      var parts = [];
+      dfs(0, 0, 0, n, lo, hi);
+
+      function dfs(startIdx, depth, sum, len, lo2, hi2) {
+        nodes++;
+        if (nodes > MAX_NODES) {
+          throw new Error('NODE_LIMIT');
+        }
+        if (depth === len) {
+          results.push(parts.slice());
+          return;
+        }
+        var remain = len - depth;
+        var minAdd = S[startIdx] * remain;
+        var maxAdd = maxS * remain;
+
+        // 剪枝：均值区间不可达
+        if (sum + minAdd > hi2) return;
+        if (sum + maxAdd < lo2) return;
+
+        // 剪枝：总格数上限
+        if (tmode === 'sumEq') {
+          if (sum + minAdd > T) return;
+          if (sum + maxAdd < T) return;
+        } else if (tmode === 'sumLe') {
+          if (sum + minAdd > T) return;
+        }
+
+        for (var i = startIdx; i < S.length; i++) {
+          parts.push(S[i]);
+          dfs(i, depth + 1, sum + S[i], len, lo2, hi2);
+          parts.pop();
+        }
+      }
+    }
+    return results;
+  }
+
+  function passesConstraints(combo, constraints) {
+    for (var i = 0; i < constraints.length; i++) {
+      var c = constraints[i];
+      if (c.type === 'exist') {
+        if (combo.indexOf(c.val) === -1) return false;
+      } else if (c.type === 'count1') {
+        var ones = 0;
+        for (var j = 0; j < combo.length; j++) if (combo[j] === 1) ones++;
+        if (ones !== c.val) return false;
+      } else if (c.type === 'total') {
+        if (combo.length !== c.val) return false;
+      }
+    }
+    return true;
+  }
+
+  function computeCandidates() {
+    var v = validateSettings();
+    if (!v.ok) {
+      state.candidates = [];
+      renderResults();
+      renderMessage('error', v.msg);
+      return false;
+    }
+
+    var rTenth = parseR($('rInput').value);
+    if (rTenth === null) {
+      state.candidates = [];
+      renderResults();
+      renderMessage('error', '请填写本轮红均格 r。');
+      return false;
+    }
+
+    state.S = v.S.slice();
+    state.tmode = v.tmode;
+    state.T = v.T;
+    state.cap = v.cap;
+    state.r = $('rInput').value;
+
+    var list;
+    try {
+      list = enumerateCandidates(v.S, rTenth, v.tmode, v.T, v.cap);
+    } catch (e) {
+      state.candidates = [];
+      renderResults();
+      if (e && e.message === 'NODE_LIMIT') {
+        renderMessage('error', '候选过多，请补充约束或降低数量上限 / 总格数。');
+      } else {
+        renderMessage('error', '计算失败：' + e.message);
+      }
+      return false;
+    }
+
+    list = list.filter(function (combo) {
+      return passesConstraints(combo, state.constraints);
+    });
+
+    state.candidates = list;
+    expanded = false;
+    renderMessage('ok', '计算完成。');
+    renderResults();
+    return true;
+  }
+
+  // ---------- 渲染 ----------
+  function renderSettings() {
+    $('SInput').value = state.S.join(',');
+    var radios = document.querySelectorAll('input[name=tmode]');
+    for (var i = 0; i < radios.length; i++) {
+      radios[i].checked = (radios[i].value === state.tmode);
+    }
+    $('TInput').value = state.T === '' ? '' : String(state.T);
+    $('capInput').value = String(state.cap);
+    $('TInput').disabled = (state.tmode === 'none');
+    $('TInput').placeholder = state.tmode === 'none' ? '不使用可留空' : '请输入总格数';
+  }
+
+  function constraintText(c) {
+    if (c.type === 'exist') return '存在物品占 ' + c.val + ' 格';
+    if (c.type === 'count1') return '1 格物品 = ' + c.val + ' 个';
+    if (c.type === 'total') return '红色物品总数 = ' + c.val;
+    return c.type + ' ' + c.val;
+  }
+
+  function renderConstraints() {
+    var box = $('constraintTags');
+    box.innerHTML = '';
+    if (!state.constraints.length) {
+      var empty = document.createElement('span');
+      empty.className = 'status';
+      empty.textContent = '暂无约束（可添加“已知某物品占X格”等）';
+      box.appendChild(empty);
+      return;
+    }
+    for (var i = 0; i < state.constraints.length; i++) {
+      (function (idx) {
+        var tag = document.createElement('span');
+        tag.className = 'tag';
+        var txt = document.createElement('span');
+        txt.textContent = constraintText(state.constraints[idx]);
+        var del = document.createElement('button');
+        del.type = 'button';
+        del.textContent = '✕';
+        del.setAttribute('aria-label', '删除约束');
+        del.addEventListener('click', function () {
+          state.constraints.splice(idx, 1);
+          renderConstraints();
+          scheduleCompute(0);
+          saveState();
+        });
+        tag.appendChild(txt);
+        tag.appendChild(del);
+        box.appendChild(tag);
+      })(i);
+    }
+  }
+
+  function renderMessage(kind, text) {
+    var box = $('warnBox');
+    if (!text) { box.innerHTML = ''; return; }
+    box.innerHTML = '';
+    var div = document.createElement('div');
+    div.className = (kind === 'error') ? 'err' : 'warn';
+    div.textContent = text;
+    box.appendChild(div);
+  }
+
+  function comboLabel(combo) {
+    return combo.join('+') + '（' + combo.length + '件）';
+  }
+
+  function buildCopyText(comboList) {
+    var lines = [];
+    lines.push('【红均格反推·俱乐大玩家】第' + state.round + '轮');
+    lines.push('当前候选：' + comboList.length + ' 种');
+    for (var i = 0; i < comboList.length; i++) {
+      lines.push(comboLabel(comboList[i]));
+    }
+    return lines.join('\n');
+  }
+
+  function renderResults() {
+    var count = state.candidates.length;
+    $('candCount').textContent = count === 0 && $('rInput').value === '' ? '-' : String(count);
+
+    var listBox = $('candList');
+    listBox.innerHTML = '';
+    $('manualBox').innerHTML = '';
+    renderMessage(null, '');
+
+    if (count === 0) {
+      if ($('rInput').value !== '') {
+        var empty = document.createElement('div');
+        empty.className = 'status';
+        empty.textContent = '当前条件下无候选。请检查 r、总格数或约束是否矛盾。';
+        listBox.appendChild(empty);
+      }
+      return;
+    }
+
+    if (count > WARN_CANDIDATES) {
+      renderMessage('warn', '⚠️ 结果过多（' + count + ' 条），建议补充已知信息。');
+    }
+
+    var rowsToShow = (count > COLLAPSE_THRESHOLD && !expanded) ? COLLAPSE_SHOW : count;
+    for (var i = 0; i < rowsToShow; i++) {
+      (function (combo) {
+        var row = document.createElement('div');
+        row.className = 'cand-row' + (count === 1 ? ' single' : '');
+        var comboEl = document.createElement('span');
+        comboEl.className = 'combo';
+        comboEl.textContent = comboLabel(combo);
+        var copyBtn = document.createElement('button');
+        copyBtn.className = 'btn copy-btn';
+        copyBtn.textContent = '复制单行';
+        copyBtn.addEventListener('click', function () {
+          copyText(buildCopyText([combo]));
+        });
+        row.appendChild(comboEl);
+        row.appendChild(copyBtn);
+        listBox.appendChild(row);
+      })(state.candidates[i]);
+    }
+
+    if (count === 1) {
+      var tip = document.createElement('div');
+      tip.className = 'status';
+      tip.style.color = '#188038';
+      tip.style.fontWeight = '700';
+      tip.textContent = '✅ 唯一解，就是它！';
+      listBox.appendChild(tip);
+    }
+
+    if (count > COLLAPSE_THRESHOLD) {
+      var truncated = document.createElement('div');
+      truncated.className = 'truncated';
+      truncated.textContent = '已截断，请补充约束。当前只显示前 ' + Math.min(rowsToShow, COLLAPSE_SHOW) + ' 条。';
+      listBox.appendChild(truncated);
+      var toggleBtn = document.createElement('button');
+      toggleBtn.className = 'btn collapse-btn';
+      toggleBtn.textContent = expanded ? '收起' : '展开全部（共' + count + '条）';
+      toggleBtn.addEventListener('click', function () {
+        expanded = !expanded;
+        renderResults();
+      });
+      listBox.appendChild(toggleBtn);
+    }
+  }
+
+  function renderAll() {
+    renderSettings();
+    renderConstraints();
+    renderResults();
+    $('roundBadge').textContent = '（当前：第 ' + state.round + ' 轮后）';
+    $('btnUndo').disabled = undoStack.length === 0;
+    if (state.r !== '') $('rInput').value = state.r;
+  }
+
+  // ---------- 计算调度 ----------
+  function scheduleCompute(delay) {
+    if (computing) return;
+    clearTimeout(computeTimer);
+    computeTimer = setTimeout(function () {
+      runCompute();
+    }, delay == null ? 180 : delay);
+  }
+
+  function runCompute() {
+    if (computing) return;
+    computing = true;
+    $('status').textContent = '计算中…';
+    // 先让“计算中”有机会绘制；计算本身为同步递归，结束后更新结果。
+    setTimeout(function () {
+      var ok = false;
+      try {
+        ok = computeCandidates();
+      } catch (e) {
+        state.candidates = [];
+        renderResults();
+        renderMessage('error', '计算异常：' + e.message);
+        ok = false;
+      } finally {
+        computing = false;
+      }
+      $('status').textContent = ok ? '计算完成。' : ($('rInput').value === '' ? '请先填写红均格。' : '未产生可用候选。');
+      saveState();
+    }, 20);
+  }
+
+  // ---------- localStorage ----------
+  function validState(obj) {
+    if (!obj || typeof obj !== 'object') return false;
+    if (obj.version !== VERSION) return false;
+    if (!Array.isArray(obj.S) || !obj.S.length) return false;
+    for (var i = 0; i < obj.S.length; i++) {
+      if (!Number.isInteger(obj.S[i]) || obj.S[i] <= 0) return false;
+    }
+    if (['none', 'sumEq', 'sumLe'].indexOf(obj.tmode) === -1) return false;
+    if (obj.tmode === 'none') {
+      if (obj.T !== '' && obj.T !== null && obj.T !== undefined) return false;
+    } else {
+      if (!Number.isInteger(obj.T) || obj.T <= 0) return false;
+    }
+    if (!Number.isInteger(obj.cap) || obj.cap <= 0 || obj.cap > 50) return false;
+    if (!Number.isInteger(obj.round) || obj.round < 0) return false;
+    if (typeof obj.r !== 'string') return false;
+    if (!Array.isArray(obj.constraints)) return false;
+    for (var j = 0; j < obj.constraints.length; j++) {
+      var c = obj.constraints[j];
+      if (!c || ['exist', 'count1', 'total'].indexOf(c.type) === -1) return false;
+      if (!Number.isInteger(c.val) || c.val <= 0) return false;
+    }
+    if (!Array.isArray(obj.candidates)) return false;
+    for (var k = 0; k < obj.candidates.length; k++) {
+      if (!Array.isArray(obj.candidates[k])) return false;
+      for (var m = 0; m < obj.candidates[k].length; m++) {
+        if (!Number.isInteger(obj.candidates[k][m]) || obj.candidates[k][m] <= 0) return false;
+      }
+    }
+    return true;
+  }
+
+  function saveState() {
+    try {
+      var data = {
+        version: VERSION,
+        S: state.S,
+        tmode: state.tmode,
+        T: state.T,
+        cap: state.cap,
+        round: state.round,
+        r: state.r,
+        constraints: state.constraints,
+        candidates: state.candidates
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      // 忽略：localStorage 不可用时静默降级为无存档模式
+    }
+  }
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      var obj = JSON.parse(raw);
+      if (!validState(obj)) {
+        localStorage.removeItem(STORAGE_KEY);
+        return;
+      }
+      state = {
+        version: VERSION,
+        S: obj.S.slice(),
+        tmode: obj.tmode,
+        T: obj.T,
+        cap: obj.cap,
+        round: obj.round,
+        r: obj.r || '',
+        constraints: obj.constraints.slice(),
+        candidates: obj.candidates.slice()
+      };
+      // 不恢复 undoStack：撤销栈是本次会话操作，刷新后从已保存轮次继续。
+      undoStack = [];
+    } catch (e) {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e2) {}
+    }
+  }
+
+  // ---------- 复制 ----------
+  function copyText(text) {
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.className = 'manual-copy';
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      if (!ok) {
+        var box = $('manualBox');
+        box.innerHTML = '';
+        var tip = document.createElement('div');
+        tip.className = 'status';
+        tip.textContent = '自动复制未成功，请长按下方文本手动复制：';
+        var area = document.createElement('textarea');
+        area.className = 'manual-copy';
+        area.value = text;
+        area.setAttribute('readonly', '');
+        box.appendChild(tip);
+        box.appendChild(area);
+        return false;
+      }
+      $('status').textContent = '已复制到剪贴板。';
+      return true;
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        $('status').textContent = '已复制到剪贴板。';
+      }).catch(function () {
+        fallback();
+      });
+    } else {
+      fallback();
+    }
+  }
+
+  // ---------- 事件 ----------
+  function addConstraint() {
+    var type = $('conType').value;
+    var val = Number($('conVal').value);
+    if (!Number.isInteger(val) || val <= 0) {
+      renderMessage('error', '约束数值必须是正整数。');
+      return;
+    }
+    state.constraints.push({ type: type, val: val });
+    $('conVal').value = '';
+    renderConstraints();
+    scheduleCompute(0);
+    saveState();
+  }
+
+  function nextRound() {
+    if (computing) return;
+    // 先算一次，确保当前轮数据有效
+    computing = true;
+    $('status').textContent = '计算中…';
+    setTimeout(function () {
+      var ok = false;
+      try {
+        ok = computeCandidates();
+      } catch (e) {
+        ok = false;
+      } finally {
+        computing = false;
+      }
+      if (!ok) {
+        $('status').textContent = '本轮未能计算，未提交。';
+        return;
+      }
+      // 提交前快照
+      undoStack.push({
+        version: VERSION,
+        S: state.S.slice(),
+        tmode: state.tmode,
+        T: state.T,
+        cap: state.cap,
+        round: state.round,
+        r: state.r,
+        constraints: state.constraints.map(function (c) { return { type: c.type, val: c.val }; }),
+        candidates: state.candidates.slice()
+      });
+      if (undoStack.length > MAX_UNDO) undoStack.shift();
+      state.round++;
+      expanded = false;
+      renderAll();
+      saveState();
+      $('status').textContent = '已提交第 ' + state.round + ' 轮。';
+    }, 20);
+  }
+
+  function undo() {
+    if (!undoStack.length) return;
+    var snap = undoStack.pop();
+    state = {
+      version: VERSION,
+      S: snap.S.slice(),
+      tmode: snap.tmode,
+      T: snap.T,
+      cap: snap.cap,
+      round: snap.round,
+      r: snap.r,
+      constraints: snap.constraints.map(function (c) { return { type: c.type, val: c.val }; }),
+      candidates: snap.candidates.slice()
+    };
+    expanded = false;
+    renderAll();
+    saveState();
+    $('status').textContent = '已撤销上一轮，恢复到第 ' + state.round + ' 轮。';
+  }
+
+  function resetAll() {
+    if (!confirm('确定清空本局并恢复默认设置吗？当前进度会丢失。')) return;
+    state = defaultState();
+    undoStack = [];
+    expanded = false;
+    $('rInput').value = '';
+    renderAll();
+    saveState();
+    $('status').textContent = '已清空本局，恢复默认。';
+  }
+
+  // 模板
+  $('templateSel').addEventListener('change', function () {
+    var val = this.value;
+    $('SInput').value = (val === 'concise' ? CONCISE_S : DEFAULT_S).join(',');
+    scheduleCompute(0);
+    saveState();
+  });
+
+  // 设置变化
+  $('SInput').addEventListener('input', function () { scheduleCompute(); saveState(); });
+  $('TInput').addEventListener('input', function () { scheduleCompute(); saveState(); });
+  $('capInput').addEventListener('input', function () { scheduleCompute(); saveState(); });
+  $('rInput').addEventListener('input', function () { scheduleCompute(); saveState(); });
+  document.querySelectorAll('input[name=tmode]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      state.tmode = radio.value;
+      renderSettings();
+      scheduleCompute();
+      saveState();
+    });
+  });
+
+  $('btnAddConstraint').addEventListener('click', addConstraint);
+  $('btnNext').addEventListener('click', nextRound);
+  $('btnUndo').addEventListener('click', undo);
+  $('btnReset').addEventListener('click', resetAll);
+  $('btnCopyAll').addEventListener('click', function () {
+    if (!state.candidates.length) {
+      renderMessage('error', '当前没有可复制的候选。');
+      return;
+    }
+    copyText(buildCopyText(state.candidates));
+  });
+
+  // 初始化
+  loadState();
+  renderAll();
+  if ($('rInput').value !== '') {
+    scheduleCompute(0);
+  }
+})();
+</script>
+</body>
+</html>

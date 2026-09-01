@@ -155,7 +155,7 @@
         <input id="TInput" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="留空不限制">
       </div>
       <div class="field">
-        <label for="NInput">红色物品总数 N（可选，留空不限制；填了=红色物品个数必须正好等于它）</label>
+        <label for="NInput">红色物品总数 N（可选，留空不限制；填了=红色物品个数不超过它，如填 8 算 ≤8 个）</label>
         <input id="NInput" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="留空不限制">
       </div>
     </div>
@@ -371,9 +371,9 @@
   }
 
   function enumerateCandidates(S, rTenth, T, N, constraints) {
-    // V2.1 种类模型：S=去重排序的格数种类；每种格数可重复取用；物品数 1..maxN
+    // V2.2 种类模型：S=去重排序的格数种类；每种格数可重复取用；物品数 1..maxN
     // T=格子总数（null=不限，填了=红色格子总和必须正好等于它）
-    // N=红色物品总数（null=不限，填了=物品个数必须正好等于它）
+    // N=红色物品总数（null=不限，填了=红色物品个数必须 ≤ N）
     var hits = [];
     var stats = {};
     var totalCount = 0;
@@ -427,7 +427,7 @@
         if (10 * sum >= n * (rTenth + 1)) return;
         if (10 * sum >= n * rTenth &&
             (T === null || sum === T) &&
-            (N === null || n === N) &&
+            (N === null || n <= N) &&
             passes(parts)) {
           totalCount++;
           stats[n] = (stats[n] || 0) + 1;

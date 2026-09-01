@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>红均格反推 V1 · 俱乐大玩家</title>
+<title>红均格反推 V2 · 俱乐大玩家</title>
 <style>
   :root {
     --bg: #f4f5f7;
@@ -57,14 +57,6 @@
   input:focus, select:focus { outline: 2px solid rgba(232,89,12,.25); border-color: var(--accent); }
   .inline-fields { display: flex; gap: 8px; flex-wrap: wrap; }
   .inline-fields .field { flex: 1 1 140px; }
-  .radio-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-  .radio-row label {
-    display: flex; align-items: center; gap: 6px;
-    min-height: 44px; padding: 6px 12px;
-    border: 1px solid #b6c2cf; border-radius: 8px;
-    background: #fff; cursor: pointer; color: var(--text); font-size: 15px;
-  }
-  .radio-row input { width: 18px; height: 18px; }
   .btn {
     display: inline-flex; align-items: center; justify-content: center;
     min-height: 44px; padding: 8px 16px;
@@ -92,9 +84,23 @@
   .result-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
   .count { font-size: 22px; font-weight: 700; }
   .count .num { color: var(--accent); }
+  .stage-badge {
+    display: inline-block; margin-top: 4px; padding: 2px 10px;
+    background: #eef1f5; border: 1px solid #d4dae1; border-radius: 20px;
+    color: var(--sub); font-size: 13px;
+  }
   .warn { background: var(--warn-bg); border: 1px solid var(--warn-line); color: #7a5a00; padding: 8px 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
   .err { background: var(--err-bg); border: 1px solid var(--err-line); color: #b42318; padding: 8px 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
+  .ok { background: #e8f5e9; border: 1px solid #b7dfb9; color: #1e6b2e; padding: 8px 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
   .status { color: var(--sub); font-size: 14px; margin-top: 6px; min-height: 22px; }
+  .stats { margin-top: 10px; border: 1px solid #e1e5ea; border-radius: 8px; overflow: hidden; }
+  .stat-row {
+    display: flex; justify-content: space-between; align-items: center;
+    min-height: 40px; padding: 6px 12px;
+    border-bottom: 1px solid #eef1f5; background: #fbfcfe; font-size: 15px;
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row.total { background: #f2f4f8; font-weight: 700; }
   .cand-list { margin-top: 10px; }
   .cand-row {
     display: flex; align-items: center; justify-content: space-between;
@@ -123,68 +129,50 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>🔴 红均格反推</h1>
-  <div class="subtitle">俱乐大玩家 · 纯本地枚举 · 每轮输入红均格与已知约束，逐步逼近唯一解</div>
+  <h1>🔴 红均格反推 V2</h1>
+  <div class="subtitle">俱乐大玩家 · 清单多重集合取子集 · 两阶段披露 · 逐步约束收敛</div>
 
   <div class="card">
-    <h2>⚙️ 开局设置</h2>
+    <h2>⚙️ 清单与红均数</h2>
     <div class="field">
-      <label for="templateSel">模板</label>
+      <label for="templateSel">预设模板</label>
       <select id="templateSel">
         <option value="full">完整集合（1,2,3,4,6,8,9,12,15,16）</option>
         <option value="concise">精简集合（1,2,3,4,6,8,12）</option>
       </select>
     </div>
     <div class="field">
-      <label for="SInput">格子种类集合 S（逗号分隔，可编辑）</label>
-      <input id="SInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="1,2,3,4,6,8,9,12,15,16">
+      <label for="SInput">格子数清单（逗号分隔，可重复，如 1,2,2,3,5）</label>
+      <input id="SInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="1,2,2,3,5,8,9,12">
     </div>
     <div class="field">
-      <label>总格数 T 口径</label>
-      <div class="radio-row" id="tmodeRow">
-        <label><input type="radio" name="tmode" value="none" checked>不使用总格数</label>
-        <label><input type="radio" name="tmode" value="sumEq">红色总和=总格数</label>
-        <label><input type="radio" name="tmode" value="sumLe">红色总和≤总格数</label>
-      </div>
-    </div>
-    <div class="inline-fields">
-      <div class="field">
-        <label for="TInput">总格数 T</label>
-        <input id="TInput" type="number" min="0" max="500" step="1" inputmode="numeric" placeholder="不使用可留空">
-      </div>
-      <div class="field">
-        <label for="capInput">红色物品数量上限（默认 10）</label>
-        <input id="capInput" type="number" min="1" max="50" step="1" value="10" inputmode="numeric">
-      </div>
+      <label for="rInput">红均数 r（百分位直接舍去，如 2.56 按 2.5）</label>
+      <input id="rInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="例如 2.5">
     </div>
   </div>
 
   <div class="card">
-    <h2>📥 每轮录入 <span id="roundBadge" style="color:var(--sub);font-size:14px;font-weight:normal">（当前：第 0 轮后）</span></h2>
+    <h2>📌 逐步约束</h2>
     <div class="inline-fields">
-      <div class="field">
-        <label for="rInput">红均格 r（去尾一位小数）</label>
-        <input id="rInput" type="number" step="0.1" min="0" inputmode="decimal" placeholder="例如 1.5" autocomplete="off">
-      </div>
       <div class="field">
         <label for="conType">约束类型</label>
         <select id="conType">
-          <option value="exist">已知某物品占 X 格</option>
-          <option value="count1">新增 N 个 1 格物品（1格物品=N）</option>
-          <option value="total">已知红色物品总数（高级）</option>
+          <option value="total">红色物品总数 = N</option>
+          <option value="exist">存在 X 格物品</option>
+          <option value="count1">1 格物品个数 = N</option>
         </select>
       </div>
       <div class="field" style="min-width:110px">
         <label for="conVal">数值</label>
-        <input id="conVal" type="number" min="1" step="1" inputmode="numeric" placeholder="X / N">
+        <input id="conVal" type="number" min="1" step="1" inputmode="numeric" placeholder="N / X">
       </div>
     </div>
     <button class="btn primary" id="btnAddConstraint" style="width:100%;margin-top:4px">➕ 添加约束</button>
     <div class="constraint-tags" id="constraintTags"></div>
     <div class="btn-row">
-      <button class="btn green" id="btnNext">下一轮（提交并快照）</button>
-      <button class="btn" id="btnUndo">↩️ 撤销上一轮</button>
-      <button class="btn danger" id="btnReset">🧹 清空本局/恢复默认</button>
+      <button class="btn" id="btnUndo">↩️ 撤销上一条约束</button>
+      <button class="btn" id="btnClearConstraints">🧹 清空全部约束</button>
+      <button class="btn danger" id="btnReset">♻️ 恢复初始状态</button>
     </div>
   </div>
 
@@ -193,29 +181,32 @@
       <div class="count">当前候选：<span class="num" id="candCount">-</span> 种</div>
       <button class="btn primary" id="btnCopyAll">📋 复制全部</button>
     </div>
-    <div class="status" id="status">请先输入红均格，或修改约束后自动计算。</div>
-    <div id="warnBox"></div>
+    <div class="stage-badge" id="stageBadge">阶段一：仅分组统计</div>
+    <div class="status" id="status">请先填写清单（至少 2 个有效数）和红均数。</div>
+    <div id="messageBox"></div>
+    <div id="statsBox"></div>
     <div class="cand-list" id="candList"></div>
     <div id="manualBox"></div>
   </div>
 
-  <div class="footer">红均格反推 V1 · 零依赖纯本地计算 · 数据只存当前浏览器</div>
+  <div class="footer">红均格反推 V2 · 零依赖纯本地计算 · localStorage key redAvgSolver_v2</div>
 </div>
 
 <script>
 (function () {
   'use strict';
 
-  var STORAGE_KEY = 'redAvgSolver_v1';
-  var VERSION = 1;
+  var STORAGE_KEY = 'redAvgSolver_v2';
+  var VERSION = 2;
   var DEFAULT_S = [1, 2, 3, 4, 6, 8, 9, 12, 15, 16];
   var CONCISE_S = [1, 2, 3, 4, 6, 8, 12];
+  var MAX_PRE = 1000000;
   var MAX_NODES = 500000;
-  var MAX_T = 80;
-  var WARN_CANDIDATES = 200;
-  var COLLAPSE_THRESHOLD = 50;
-  var COLLAPSE_SHOW = 20;
-  var MAX_UNDO = 50;
+  var MAX_STORE = 200;
+  var AUTO_EXPAND = 50;
+  var MANUAL_MAX = 199;
+  var MAX_UNDO = 100;
+
 
   var state = defaultState();
   var undoStack = [];
@@ -227,200 +218,304 @@
     return {
       version: VERSION,
       S: DEFAULT_S.slice(),
-      tmode: 'none',
-      T: '',
-      cap: 10,
-      round: 0,
-      r: '',
+      rText: '',
       constraints: [],
-      candidates: []
+      result: null,
+      messageKind: '',
+      messageText: '',
+      noticeText: ''
     };
   }
 
-  // ---------- DOM ----------
   function $(id) { return document.getElementById(id); }
 
   // ---------- 解析 / 校验 ----------
   function parseS(raw) {
-    var parts = String(raw || '').split(/[,，、\s]+/);
+    var parts = String(raw || '').split(/[,，、;；\s]+/);
     var arr = [];
+    var errors = [];
     for (var i = 0; i < parts.length; i++) {
-      var v = parts[i].trim();
-      if (!v) continue;
-      var n = Number(v);
-      if (!Number.isInteger(n) || n <= 0) return null;
-      if (arr.indexOf(n) === -1) arr.push(n);
+      var part = parts[i].trim();
+      if (!part) continue;
+      if (!/^\d+$/.test(part)) {
+        errors.push(part);
+        continue;
+      }
+      var n = Number(part);
+      if (!Number.isInteger(n) || n <= 0) {
+        errors.push(part);
+        continue;
+      }
+      arr.push(n);
     }
-    if (!arr.length) return null;
     arr.sort(function (a, b) { return a - b; });
-    return arr;
+    return { ok: arr.length > 0, S: arr, errors: errors };
   }
 
   function parseR(raw) {
     var s = String(raw == null ? '' : raw).trim();
-    if (s === '') return null;
+    if (s === '') return { ok: false, rTenth: null, normalized: '' };
     var n = Number(s);
-    if (!isFinite(n) || n < 0) return null;
-    // 去尾写死：只取十分位，例如 1.56 也按 1.5 参与匹配
-    return Math.floor(n * 10 + 1e-9);
+    if (!isFinite(n) || n < 0) return { ok: false, rTenth: null, normalized: '' };
+    // 去尾：百分位直接舍去。例如 2.56 -> 25（表示 2.5）
+    var rTenth = Math.floor(n * 10 + 1e-9);
+    var normalized = (rTenth / 10).toFixed(1);
+    return { ok: true, rTenth: rTenth, normalized: normalized };
   }
 
-  function validateSettings() {
-    var S = parseS($('SInput').value);
-    if (!S) return { ok: false, msg: '格子集合 S 格式不对：请输入正整数，逗号分隔。' };
-    var tmode = document.querySelector('input[name=tmode]:checked').value;
-    var T = $('TInput').value === '' ? '' : Number($('TInput').value);
-    var cap = $('capInput').value === '' ? '' : Number($('capInput').value);
-
-    if (tmode !== 'none') {
-      if (T === '' || !Number.isInteger(T) || T <= 0) {
-        return { ok: false, msg: '已选择使用总格数，请填写正整数 T。' };
-      }
-    } else {
-      T = '';
+  // ---------- 枚举引擎（V2 核心：清单多重集合取子集） ----------
+  function buildGroups(S) {
+    var map = {};
+    for (var i = 0; i < S.length; i++) {
+      var v = S[i];
+      map[v] = (map[v] || 0) + 1;
     }
-    if (cap === '' || !Number.isInteger(cap) || cap <= 0) {
-      return { ok: false, msg: '请填写红色物品数量上限（不使用总格数时必填；默认 10）。' };
-    }
-    if (cap > 50) {
-      return { ok: false, msg: '红色物品数量上限不能超过 50。' };
-    }
-    if (tmode !== 'none' && Number(T) > MAX_T) {
-      return { ok: false, msg: '总格数 T 超过 ' + MAX_T + '，请先收紧或改选“不使用总格数”。' };
-    }
-    return { ok: true, S: S, tmode: tmode, T: T, cap: cap };
-  }
-
-  // ---------- 枚举引擎 ----------
-  function enumerateCandidates(S, rTenth, tmode, T, cap) {
-    var nodes = 0;
-    var results = [];
-    var maxS = S[S.length - 1];
-    var n;
-
-    for (n = 1; n <= cap; n++) {
-      var lo = Math.ceil(n * rTenth / 10);
-      var hi = Math.floor((n * (rTenth + 1) - 1) / 10);
-      if (lo > hi) continue;
-      var parts = [];
-      dfs(0, 0, 0, n, lo, hi);
-
-      function dfs(startIdx, depth, sum, len, lo2, hi2) {
-        nodes++;
-        if (nodes > MAX_NODES) {
-          throw new Error('NODE_LIMIT');
-        }
-        if (depth === len) {
-          results.push(parts.slice());
-          return;
-        }
-        var remain = len - depth;
-        var minAdd = S[startIdx] * remain;
-        var maxAdd = maxS * remain;
-
-        // 剪枝：均值区间不可达
-        if (sum + minAdd > hi2) return;
-        if (sum + maxAdd < lo2) return;
-
-        // 剪枝：总格数上限
-        if (tmode === 'sumEq') {
-          if (sum + minAdd > T) return;
-          if (sum + maxAdd < T) return;
-        } else if (tmode === 'sumLe') {
-          if (sum + minAdd > T) return;
-        }
-
-        for (var i = startIdx; i < S.length; i++) {
-          parts.push(S[i]);
-          dfs(i, depth + 1, sum + S[i], len, lo2, hi2);
-          parts.pop();
-        }
+    var groups = [];
+    for (var key in map) {
+      if (Object.prototype.hasOwnProperty.call(map, key)) {
+        groups.push({ val: Number(key), cnt: map[key] });
       }
     }
-    return results;
+    groups.sort(function (a, b) { return a.val - b.val; });
+    return groups;
   }
 
-  function passesConstraints(combo, constraints) {
+  function preEstimate(groups) {
+    var p = 1;
+    for (var i = 0; i < groups.length; i++) p *= (groups[i].cnt + 1);
+    return p - 1;
+  }
+
+  function effectiveConstraints(constraints, groups) {
+    var total = null;
+    var totalConflict = false;
+    var count1 = null;
+    var count1Conflict = false;
+    var exists = [];
+    var existMap = {};
     for (var i = 0; i < constraints.length; i++) {
       var c = constraints[i];
-      if (c.type === 'exist') {
-        if (combo.indexOf(c.val) === -1) return false;
+      if (c.type === 'total') {
+        if (total === null) total = c.val;
+        else if (total !== c.val) totalConflict = true;
       } else if (c.type === 'count1') {
-        var ones = 0;
-        for (var j = 0; j < combo.length; j++) if (combo[j] === 1) ones++;
-        if (ones !== c.val) return false;
-      } else if (c.type === 'total') {
-        if (combo.length !== c.val) return false;
+        if (count1 === null) count1 = c.val;
+        else if (count1 !== c.val) count1Conflict = true;
+      } else if (c.type === 'exist') {
+        if (!existMap[c.val]) {
+          existMap[c.val] = true;
+          exists.push(c.val);
+        }
       }
     }
-    return true;
+    var groupVals = {};
+    for (var j = 0; j < groups.length; j++) groupVals[groups[j].val] = true;
+    var missingExist = false;
+    for (var k = 0; k < exists.length; k++) {
+      if (!groupVals[exists[k]]) missingExist = true;
+    }
+    return {
+      total: total,
+      totalConflict: totalConflict,
+      count1: count1,
+      count1Conflict: count1Conflict,
+      exists: exists,
+      missingExist: missingExist
+    };
   }
 
-  function computeCandidates() {
-    var v = validateSettings();
-    if (!v.ok) {
-      state.candidates = [];
-      renderResults();
-      renderMessage('error', v.msg);
-      return false;
-    }
-
-    var rTenth = parseR($('rInput').value);
-    if (rTenth === null) {
-      state.candidates = [];
-      renderResults();
-      renderMessage('error', '请填写本轮红均格 r。');
-      return false;
-    }
-
-    state.S = v.S.slice();
-    state.tmode = v.tmode;
-    state.T = v.T;
-    state.cap = v.cap;
-    state.r = $('rInput').value;
-
-    var list;
-    try {
-      list = enumerateCandidates(v.S, rTenth, v.tmode, v.T, v.cap);
-    } catch (e) {
-      state.candidates = [];
-      renderResults();
-      if (e && e.message === 'NODE_LIMIT') {
-        renderMessage('error', '候选过多，请补充约束或降低数量上限 / 总格数。');
+  // 精确求“当前部分组合 + 剩余组任意取”可达到的最小/最大平均数。
+  // 用于安全剪枝：若所有可能完成方式的平均数都到不了目标区间，则跳过。
+  function avgBounds(remStart, sum, n, groups) {
+    var s = sum, c = n, a = s / c;
+    // 最大：从大到小加，只有高于当前均值才可能提升均值
+    for (var i = groups.length - 1; i >= remStart; i--) {
+      var v = groups[i].val;
+      if (v > a) {
+        s += v * groups[i].cnt;
+        c += groups[i].cnt;
+        a = s / c;
       } else {
-        renderMessage('error', '计算失败：' + e.message);
+        break;
       }
+    }
+    var max = a;
+    // 最小：从小到大加，只有低于当前均值才可能降低均值
+    s = sum; c = n; a = s / c;
+    for (var j = remStart; j < groups.length; j++) {
+      var v2 = groups[j].val;
+      if (v2 < a) {
+        s += v2 * groups[j].cnt;
+        c += groups[j].cnt;
+        a = s / c;
+      } else {
+        break;
+      }
+    }
+    return { min: a, max: max };
+  }
+
+  function enumerateCandidates(S, rTenth, constraints) {
+    var groups = buildGroups(S);
+    var pre = preEstimate(groups);
+    if (pre > MAX_PRE) {
+      var err = new Error('PRE_LIMIT');
+      err.pre = pre;
+      err.len = S.length;
+      throw err;
+    }
+
+    var eff = effectiveConstraints(constraints, groups);
+    var hits = [];
+    var stats = {};
+    var totalCount = 0;
+    var nodes = 0;
+    var suffixCount = new Array(groups.length + 1);
+    suffixCount[groups.length] = 0;
+    for (var i = groups.length - 1; i >= 0; i--) {
+      suffixCount[i] = suffixCount[i + 1] + groups[i].cnt;
+    }
+
+    // 约束本身矛盾，或要求存在的值根本不在清单中，直接 0 候选
+    if (eff.totalConflict || eff.count1Conflict || eff.missingExist) {
+      return { hits: hits, stats: stats, totalCount: totalCount, truncated: false };
+    }
+
+    function passes(combo) {
+      if (eff.total !== null && combo.length !== eff.total) return false;
+      for (var i = 0; i < eff.exists.length; i++) {
+        if (combo.indexOf(eff.exists[i]) === -1) return false;
+      }
+      if (eff.count1 !== null) {
+        var ones = 0;
+        for (var j = 0; j < combo.length; j++) if (combo[j] === 1) ones++;
+        if (ones !== eff.count1) return false;
+      }
+      return true;
+    }
+
+    function dfs(idx, parts, sum, n) {
+      nodes++;
+      if (nodes > MAX_NODES) throw new Error('NODE_LIMIT');
+
+      if (idx === groups.length) {
+        if (n === 0) return;
+        // 整数运算：floor(10*sum/n) === rTenth
+        // 等价 10*sum ∈ [n*rTenth, n*rTenth+n)
+        if (sum * 10 >= n * rTenth && sum * 10 < n * (rTenth + 1) && passes(parts)) {
+          totalCount++;
+          stats[n] = (stats[n] || 0) + 1;
+          if (hits.length < MAX_STORE) hits.push(parts.slice());
+        }
+        return;
+      }
+
+      var g = groups[idx];
+      for (var k = 0; k <= g.cnt; k++) {
+        var nextN = n + k;
+        var nextSum = sum + g.val * k;
+
+        // 约束剪枝：红色物品总数
+        if (eff.total !== null) {
+          if (nextN > eff.total) continue;
+          if (nextN + suffixCount[idx + 1] < eff.total) continue;
+        }
+        // 约束剪枝：存在 X 格物品（当前组是 X 的唯一来源，k=0 则不可能满足）
+        if (k === 0 && eff.exists.indexOf(g.val) !== -1) continue;
+        // 约束剪枝：1 格物品个数
+        if (g.val === 1 && eff.count1 !== null && k > eff.count1) continue;
+
+        // 安全均值区间剪枝：剩余任意取都达不到目标区间则跳过
+        if (nextN > 0) {
+          var b = avgBounds(idx + 1, nextSum, nextN, groups);
+          if (b.max * 10 < rTenth) continue;
+          if (b.min * 10 >= rTenth + 1) continue;
+        }
+
+        for (var i = 0; i < k; i++) parts.push(g.val);
+        dfs(idx + 1, parts, nextSum, nextN);
+        for (var i = 0; i < k; i++) parts.pop();
+      }
+    }
+
+    dfs(0, [], 0, 0);
+    return {
+      hits: hits,
+      stats: stats,
+      totalCount: totalCount,
+      truncated: totalCount > MAX_STORE
+    };
+  }
+
+  // ---------- 计算 ----------
+  function computeCandidates() {
+    var sParsed = parseS($('SInput').value);
+    var rParsed = parseR($('rInput').value);
+
+    var invalidItems = sParsed.errors.length ? '已忽略非法项：' + sParsed.errors.join('、') + '；' : '';
+
+    if (sParsed.S.length < 2) {
+      state.result = null;
+      state.messageKind = 'error';
+      state.messageText = invalidItems + '清单至少需要 2 个有效格子数。';
+      state.rText = rParsed.ok ? rParsed.normalized : '';
+      if (rParsed.ok) $('rInput').value = rParsed.normalized;
+      renderResults();
+      return false;
+    }
+    if (!rParsed.ok) {
+      state.result = null;
+      state.messageKind = 'error';
+      state.messageText = '请填写有效的红均数（非负数字，如 2.5）。';
+      renderResults();
       return false;
     }
 
-    list = list.filter(function (combo) {
-      return passesConstraints(combo, state.constraints);
-    });
+    // 回填去尾显示
+    $('rInput').value = rParsed.normalized;
+    state.S = sParsed.S.slice();
+    state.rText = rParsed.normalized;
 
-    state.candidates = list;
-    expanded = false;
-    renderMessage('ok', '计算完成。');
+    try {
+      var result = enumerateCandidates(state.S, rParsed.rTenth, state.constraints);
+      state.result = result;
+      state.messageKind = 'ok';
+      state.messageText = invalidItems ? invalidItems.replace(/；$/, '。') + '计算完成。' : '计算完成。';
+      if (result.totalCount === 0) {
+        state.messageKind = 'err';
+        state.messageText = state.constraints.length > 0
+          ? '当前约束下无匹配组合，可能约束矛盾，可撤销或清空约束。'
+          : '当前清单与红均数下无匹配组合。';
+      } else if (result.totalCount > MAX_STORE) {
+        state.messageKind = 'warn';
+        state.messageText = invalidItems + '结果过多（' + result.totalCount + ' 条），仅显示分组统计；建议补充约束。';
+      } else if (invalidItems) {
+        state.messageKind = 'warn';
+        state.messageText = invalidItems.replace(/；$/, '。') + '已按有效项计算。';
+      }
+    } catch (e) {
+      state.result = null;
+      state.messageKind = 'error';
+      if (e && e.message === 'PRE_LIMIT') {
+        state.messageText = '清单 ' + e.len + ' 个元素，组合数约 ' + e.pre.toLocaleString('zh-CN') + '，请收紧到 ≤20 个元素。';
+      } else if (e && e.message === 'NODE_LIMIT') {
+        state.messageText = '计算节点超过 50 万，请补充约束或收紧清单后重试。';
+      } else {
+        state.messageText = '计算失败：' + (e && e.message ? e.message : e);
+      }
+      renderResults();
+      return false;
+    }
+
     renderResults();
     return true;
   }
 
   // ---------- 渲染 ----------
-  function renderSettings() {
-    $('SInput').value = state.S.join(',');
-    var radios = document.querySelectorAll('input[name=tmode]');
-    for (var i = 0; i < radios.length; i++) {
-      radios[i].checked = (radios[i].value === state.tmode);
-    }
-    $('TInput').value = state.T === '' ? '' : String(state.T);
-    $('capInput').value = String(state.cap);
-    $('TInput').disabled = (state.tmode === 'none');
-    $('TInput').placeholder = state.tmode === 'none' ? '不使用可留空' : '请输入总格数';
-  }
-
   function constraintText(c) {
-    if (c.type === 'exist') return '存在物品占 ' + c.val + ' 格';
-    if (c.type === 'count1') return '1 格物品 = ' + c.val + ' 个';
     if (c.type === 'total') return '红色物品总数 = ' + c.val;
+    if (c.type === 'exist') return '存在 ' + c.val + ' 格物品';
+    if (c.type === 'count1') return '1 格物品 = ' + c.val + ' 个';
     return c.type + ' ' + c.val;
   }
 
@@ -430,7 +525,7 @@
     if (!state.constraints.length) {
       var empty = document.createElement('span');
       empty.className = 'status';
-      empty.textContent = '暂无约束（可添加“已知某物品占X格”等）';
+      empty.textContent = '暂无约束';
       box.appendChild(empty);
       return;
     }
@@ -445,7 +540,10 @@
         del.textContent = '✕';
         del.setAttribute('aria-label', '删除约束');
         del.addEventListener('click', function () {
+          if (state.constraints.length === 0) return;
+          pushUndo();
           state.constraints.splice(idx, 1);
+          expanded = false;
           renderConstraints();
           scheduleCompute(0);
           saveState();
@@ -458,11 +556,24 @@
   }
 
   function renderMessage(kind, text) {
-    var box = $('warnBox');
-    if (!text) { box.innerHTML = ''; return; }
+    var box = $('messageBox');
     box.innerHTML = '';
+    if (!text) return;
     var div = document.createElement('div');
-    div.className = (kind === 'error') ? 'err' : 'warn';
+    if (kind === 'err') div.className = 'err';
+    else if (kind === 'warn') div.className = 'warn';
+    else div.className = 'ok';
+    div.textContent = text;
+    box.appendChild(div);
+  }
+
+  function appendMessage(kind, text) {
+    if (!text) return;
+    var box = $('messageBox');
+    var div = document.createElement('div');
+    if (kind === 'err') div.className = 'err';
+    else if (kind === 'warn') div.className = 'warn';
+    else div.className = 'ok';
     div.textContent = text;
     box.appendChild(div);
   }
@@ -473,7 +584,7 @@
 
   function buildCopyText(comboList) {
     var lines = [];
-    lines.push('【红均格反推·俱乐大玩家】第' + state.round + '轮');
+    lines.push('【红均格反推V2·俱乐大玩家】');
     lines.push('当前候选：' + comboList.length + ' 种');
     for (var i = 0; i < comboList.length; i++) {
       lines.push(comboLabel(comboList[i]));
@@ -481,87 +592,139 @@
     return lines.join('\n');
   }
 
-  function renderResults() {
-    var count = state.candidates.length;
-    $('candCount').textContent = count === 0 && $('rInput').value === '' ? '-' : String(count);
+  function renderStats() {
+    var box = $('statsBox');
+    box.innerHTML = '';
+    if (!state.result || state.result.totalCount === 0) return;
+    var stats = state.result.stats;
+    var keys = [];
+    for (var k in stats) {
+      if (Object.prototype.hasOwnProperty.call(stats, k)) keys.push(Number(k));
+    }
+    keys.sort(function (a, b) { return a - b; });
+    var wrap = document.createElement('div');
+    wrap.className = 'stats';
+    for (var i = 0; i < keys.length; i++) {
+      var row = document.createElement('div');
+      row.className = 'stat-row';
+      var left = document.createElement('span');
+      left.textContent = keys[i] + ' 个一组';
+      var right = document.createElement('span');
+      right.textContent = stats[keys[i]] + ' 种';
+      row.appendChild(left);
+      row.appendChild(right);
+      wrap.appendChild(row);
+    }
+    var totalRow = document.createElement('div');
+    totalRow.className = 'stat-row total';
+    var tLeft = document.createElement('span');
+    tLeft.textContent = '合计';
+    var tRight = document.createElement('span');
+    tRight.textContent = state.result.totalCount + ' 种';
+    totalRow.appendChild(tLeft);
+    totalRow.appendChild(tRight);
+    wrap.appendChild(totalRow);
+    box.appendChild(wrap);
+  }
 
+  function renderDetails() {
     var listBox = $('candList');
     listBox.innerHTML = '';
-    $('manualBox').innerHTML = '';
-    renderMessage(null, '');
+    if (!state.result || state.result.totalCount === 0) return;
 
-    if (count === 0) {
-      if ($('rInput').value !== '') {
-        var empty = document.createElement('div');
-        empty.className = 'status';
-        empty.textContent = '当前条件下无候选。请检查 r、总格数或约束是否矛盾。';
-        listBox.appendChild(empty);
-      }
+    // 阶段一（无约束）：只显示分组统计，不显示明细
+    if (state.constraints.length === 0) {
+      var tip = document.createElement('div');
+      tip.className = 'status';
+      tip.textContent = '当前为阶段一：仅显示分组统计。添加约束后自动展开明细。';
+      listBox.appendChild(tip);
       return;
     }
 
-    if (count > WARN_CANDIDATES) {
-      renderMessage('warn', '⚠️ 结果过多（' + count + ' 条），建议补充已知信息。');
+    var count = state.result.totalCount;
+    if (count > MAX_STORE) return; // >200 只统计+警告，不展开
+
+    var showList = false;
+    if (count <= AUTO_EXPAND) {
+      showList = true;
+    } else if (count <= MANUAL_MAX && expanded) {
+      showList = true;
     }
 
-    var rowsToShow = (count > COLLAPSE_THRESHOLD && !expanded) ? COLLAPSE_SHOW : count;
-    for (var i = 0; i < rowsToShow; i++) {
-      (function (combo) {
-        var row = document.createElement('div');
-        row.className = 'cand-row' + (count === 1 ? ' single' : '');
-        var comboEl = document.createElement('span');
-        comboEl.className = 'combo';
-        comboEl.textContent = comboLabel(combo);
-        var copyBtn = document.createElement('button');
-        copyBtn.className = 'btn copy-btn';
-        copyBtn.textContent = '复制单行';
-        copyBtn.addEventListener('click', function () {
-          copyText(buildCopyText([combo]));
-        });
-        row.appendChild(comboEl);
-        row.appendChild(copyBtn);
-        listBox.appendChild(row);
-      })(state.candidates[i]);
+    if (showList) {
+      var rows = state.result.hits;
+      for (var i = 0; i < rows.length; i++) {
+        (function (combo) {
+          var row = document.createElement('div');
+          row.className = 'cand-row' + (count === 1 ? ' single' : '');
+          var comboEl = document.createElement('span');
+          comboEl.className = 'combo';
+          comboEl.textContent = comboLabel(combo);
+          var copyBtn = document.createElement('button');
+          copyBtn.className = 'btn copy-btn';
+          copyBtn.textContent = '复制单行';
+          copyBtn.addEventListener('click', function () {
+            copyText(buildCopyText([combo]));
+          });
+          row.appendChild(comboEl);
+          row.appendChild(copyBtn);
+          listBox.appendChild(row);
+        })(rows[i]);
+      }
+      if (count === 1) {
+        var uniqueTip = document.createElement('div');
+        uniqueTip.className = 'status';
+        uniqueTip.style.color = '#188038';
+        uniqueTip.style.fontWeight = '700';
+        uniqueTip.textContent = '✅ 唯一解，就是它！';
+        listBox.appendChild(uniqueTip);
+      }
     }
 
-    if (count === 1) {
-      var tip = document.createElement('div');
-      tip.className = 'status';
-      tip.style.color = '#188038';
-      tip.style.fontWeight = '700';
-      tip.textContent = '✅ 唯一解，就是它！';
-      listBox.appendChild(tip);
-    }
-
-    if (count > COLLAPSE_THRESHOLD) {
-      var truncated = document.createElement('div');
-      truncated.className = 'truncated';
-      truncated.textContent = '已截断，请补充约束。当前只显示前 ' + Math.min(rowsToShow, COLLAPSE_SHOW) + ' 条。';
-      listBox.appendChild(truncated);
+    if (count > AUTO_EXPAND && count <= MANUAL_MAX) {
       var toggleBtn = document.createElement('button');
       toggleBtn.className = 'btn collapse-btn';
-      toggleBtn.textContent = expanded ? '收起' : '展开全部（共' + count + '条）';
+      toggleBtn.textContent = expanded ? '收起明细' : '展开明细（共' + count + '条）';
       toggleBtn.addEventListener('click', function () {
         expanded = !expanded;
-        renderResults();
+        renderDetails();
       });
       listBox.appendChild(toggleBtn);
     }
   }
 
+  function renderResults() {
+    var count = state.result ? state.result.totalCount : 0;
+    $('candCount').textContent = (state.rText === '' && !state.result) ? '-' : String(count);
+
+    $('stageBadge').textContent = state.constraints.length > 0
+      ? '阶段二：约束收敛'
+      : '阶段一：仅分组统计';
+
+    renderStats();
+    renderDetails();
+    renderMessage(state.messageKind, state.messageText);
+    appendMessage('warn', state.noticeText);
+
+    var canCopy = state.result && state.result.totalCount > 0 && state.result.totalCount <= MAX_STORE;
+    $('btnCopyAll').disabled = !canCopy || computing;
+  }
+
   function renderAll() {
-    renderSettings();
+    $('SInput').value = state.S.join(',');
+    $('rInput').value = state.rText;
+    $('conVal').value = '';
     renderConstraints();
     renderResults();
-    $('roundBadge').textContent = '（当前：第 ' + state.round + ' 轮后）';
-    $('btnUndo').disabled = undoStack.length === 0;
-    if (state.r !== '') $('rInput').value = state.r;
+    $('btnUndo').disabled = undoStack.length === 0 || computing;
+    $('btnClearConstraints').disabled = state.constraints.length === 0 || computing;
   }
 
   // ---------- 计算调度 ----------
   function scheduleCompute(delay) {
     if (computing) return;
     clearTimeout(computeTimer);
+    $('status').textContent = '计算中…';
     computeTimer = setTimeout(function () {
       runCompute();
     }, delay == null ? 180 : delay);
@@ -570,23 +733,112 @@
   function runCompute() {
     if (computing) return;
     computing = true;
+    setBusy(true);
     $('status').textContent = '计算中…';
-    // 先让“计算中”有机会绘制；计算本身为同步递归，结束后更新结果。
     setTimeout(function () {
-      var ok = false;
       try {
-        ok = computeCandidates();
+        computeCandidates();
       } catch (e) {
-        state.candidates = [];
+        state.result = null;
+        state.messageKind = 'error';
+        state.messageText = '计算异常：' + (e && e.message ? e.message : e);
         renderResults();
-        renderMessage('error', '计算异常：' + e.message);
-        ok = false;
       } finally {
         computing = false;
+        setBusy(false);
+        saveState();
       }
-      $('status').textContent = ok ? '计算完成。' : ($('rInput').value === '' ? '请先填写红均格。' : '未产生可用候选。');
-      saveState();
+      $('status').textContent = '计算完成。';
     }, 20);
+  }
+
+  function setBusy(busy) {
+    $('btnAddConstraint').disabled = busy;
+    $('btnUndo').disabled = busy || undoStack.length === 0;
+    $('btnClearConstraints').disabled = busy || state.constraints.length === 0;
+    $('btnReset').disabled = busy;
+    $('btnCopyAll').disabled = busy || !state.result || state.result.totalCount === 0 || state.result.totalCount > MAX_STORE;
+  }
+
+  // ---------- 约束操作 ----------
+  function pushUndo() {
+    undoStack.push(state.constraints.map(function (c) { return { type: c.type, val: c.val }; }));
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+  }
+
+  function addConstraint() {
+    if (computing) return;
+    var type = $('conType').value;
+    var val = Number($('conVal').value);
+    if (!Number.isInteger(val) || val <= 0) {
+      renderMessage('error', '约束数值必须是正整数。');
+      return;
+    }
+    var sParsed = parseS($('SInput').value);
+    if (sParsed.S.length < 2) {
+      renderMessage('error', '请先输入至少 2 个有效格子数。');
+      return;
+    }
+    if (type === 'total' && val > sParsed.S.length) {
+      renderMessage('error', '红色物品总数不能超过清单元素个数（' + sParsed.S.length + '）。');
+      return;
+    }
+    if (type === 'count1') {
+      var oneCount = 0;
+      for (var i = 0; i < sParsed.S.length; i++) if (sParsed.S[i] === 1) oneCount++;
+      if (val > oneCount) {
+        renderMessage('error', '1 格物品个数不能超过清单中 1 的个数（' + oneCount + '）。');
+        return;
+      }
+    }
+    if (type === 'exist' && sParsed.S.indexOf(val) === -1) {
+      renderMessage('error', '清单中没有 ' + val + ' 格物品。');
+      return;
+    }
+    state.noticeText = '';
+    pushUndo();
+    state.constraints.push({ type: type, val: val });
+    expanded = false;
+    $('conVal').value = '';
+    renderConstraints();
+    scheduleCompute(0);
+    saveState();
+  }
+
+  function undoConstraint() {
+    if (computing || !undoStack.length) return;
+    state.noticeText = '';
+    state.constraints = undoStack.pop().slice();
+    expanded = false;
+    renderConstraints();
+    scheduleCompute(0);
+    saveState();
+  }
+
+  function clearConstraints() {
+    if (computing || !state.constraints.length) return;
+    state.noticeText = '';
+    pushUndo();
+    state.constraints = [];
+    expanded = false;
+    renderConstraints();
+    scheduleCompute(0);
+    saveState();
+    renderMessage('ok', '已清空全部约束，回到仅红均数的大池统计。');
+  }
+
+  function resetAll() {
+    if (computing) return;
+    if (!confirm('确定恢复初始状态吗？清单、红均数、约束将全部清空。')) return;
+    state = defaultState();
+    undoStack = [];
+    expanded = false;
+    $('SInput').value = state.S.join(',');
+    $('rInput').value = '';
+    $('conVal').value = '';
+    renderAll();
+    saveState();
+    $('status').textContent = '已恢复初始状态。';
   }
 
   // ---------- localStorage ----------
@@ -597,27 +849,12 @@
     for (var i = 0; i < obj.S.length; i++) {
       if (!Number.isInteger(obj.S[i]) || obj.S[i] <= 0) return false;
     }
-    if (['none', 'sumEq', 'sumLe'].indexOf(obj.tmode) === -1) return false;
-    if (obj.tmode === 'none') {
-      if (obj.T !== '' && obj.T !== null && obj.T !== undefined) return false;
-    } else {
-      if (!Number.isInteger(obj.T) || obj.T <= 0) return false;
-    }
-    if (!Number.isInteger(obj.cap) || obj.cap <= 0 || obj.cap > 50) return false;
-    if (!Number.isInteger(obj.round) || obj.round < 0) return false;
-    if (typeof obj.r !== 'string') return false;
+    if (typeof obj.rText !== 'string') return false;
     if (!Array.isArray(obj.constraints)) return false;
     for (var j = 0; j < obj.constraints.length; j++) {
       var c = obj.constraints[j];
-      if (!c || ['exist', 'count1', 'total'].indexOf(c.type) === -1) return false;
+      if (!c || ['total', 'exist', 'count1'].indexOf(c.type) === -1) return false;
       if (!Number.isInteger(c.val) || c.val <= 0) return false;
-    }
-    if (!Array.isArray(obj.candidates)) return false;
-    for (var k = 0; k < obj.candidates.length; k++) {
-      if (!Array.isArray(obj.candidates[k])) return false;
-      for (var m = 0; m < obj.candidates[k].length; m++) {
-        if (!Number.isInteger(obj.candidates[k][m]) || obj.candidates[k][m] <= 0) return false;
-      }
     }
     return true;
   }
@@ -627,17 +864,12 @@
       var data = {
         version: VERSION,
         S: state.S,
-        tmode: state.tmode,
-        T: state.T,
-        cap: state.cap,
-        round: state.round,
-        r: state.r,
-        constraints: state.constraints,
-        candidates: state.candidates
+        rText: state.rText,
+        constraints: state.constraints.map(function (c) { return { type: c.type, val: c.val }; })
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) {
-      // 忽略：localStorage 不可用时静默降级为无存档模式
+      // localStorage 不可用时静默降级
     }
   }
 
@@ -650,19 +882,11 @@
         localStorage.removeItem(STORAGE_KEY);
         return;
       }
-      state = {
-        version: VERSION,
-        S: obj.S.slice(),
-        tmode: obj.tmode,
-        T: obj.T,
-        cap: obj.cap,
-        round: obj.round,
-        r: obj.r || '',
-        constraints: obj.constraints.slice(),
-        candidates: obj.candidates.slice()
-      };
-      // 不恢复 undoStack：撤销栈是本次会话操作，刷新后从已保存轮次继续。
+      state.S = obj.S.slice();
+      state.rText = obj.rText || '';
+      state.constraints = obj.constraints.map(function (c) { return { type: c.type, val: c.val }; });
       undoStack = [];
+      expanded = false;
     } catch (e) {
       try { localStorage.removeItem(STORAGE_KEY); } catch (e2) {}
     }
@@ -713,128 +937,56 @@
   }
 
   // ---------- 事件 ----------
-  function addConstraint() {
-    var type = $('conType').value;
-    var val = Number($('conVal').value);
-    if (!Number.isInteger(val) || val <= 0) {
-      renderMessage('error', '约束数值必须是正整数。');
-      return;
-    }
-    state.constraints.push({ type: type, val: val });
-    $('conVal').value = '';
-    renderConstraints();
-    scheduleCompute(0);
-    saveState();
-  }
-
-  function nextRound() {
-    if (computing) return;
-    // 先算一次，确保当前轮数据有效
-    computing = true;
-    $('status').textContent = '计算中…';
-    setTimeout(function () {
-      var ok = false;
-      try {
-        ok = computeCandidates();
-      } catch (e) {
-        ok = false;
-      } finally {
-        computing = false;
-      }
-      if (!ok) {
-        $('status').textContent = '本轮未能计算，未提交。';
-        return;
-      }
-      // 提交前快照
-      undoStack.push({
-        version: VERSION,
-        S: state.S.slice(),
-        tmode: state.tmode,
-        T: state.T,
-        cap: state.cap,
-        round: state.round,
-        r: state.r,
-        constraints: state.constraints.map(function (c) { return { type: c.type, val: c.val }; }),
-        candidates: state.candidates.slice()
-      });
-      if (undoStack.length > MAX_UNDO) undoStack.shift();
-      state.round++;
+  function clearConstraintsOnInputChanged(reason) {
+    if (state.constraints.length > 0) {
+      state.constraints = [];
+      undoStack = [];
       expanded = false;
-      renderAll();
-      saveState();
-      $('status').textContent = '已提交第 ' + state.round + ' 轮。';
-    }, 20);
+      renderConstraints();
+      state.noticeText = reason + '，旧约束已自动清空。';
+      state.messageKind = 'warn';
+      state.messageText = '';
+      renderMessage('warn', state.noticeText);
+    }
   }
 
-  function undo() {
-    if (!undoStack.length) return;
-    var snap = undoStack.pop();
-    state = {
-      version: VERSION,
-      S: snap.S.slice(),
-      tmode: snap.tmode,
-      T: snap.T,
-      cap: snap.cap,
-      round: snap.round,
-      r: snap.r,
-      constraints: snap.constraints.map(function (c) { return { type: c.type, val: c.val }; }),
-      candidates: snap.candidates.slice()
-    };
-    expanded = false;
-    renderAll();
-    saveState();
-    $('status').textContent = '已撤销上一轮，恢复到第 ' + state.round + ' 轮。';
-  }
-
-  function resetAll() {
-    if (!confirm('确定清空本局并恢复默认设置吗？当前进度会丢失。')) return;
-    state = defaultState();
-    undoStack = [];
-    expanded = false;
-    $('rInput').value = '';
-    renderAll();
-    saveState();
-    $('status').textContent = '已清空本局，恢复默认。';
-  }
-
-  // 模板
   $('templateSel').addEventListener('change', function () {
     var val = this.value;
     $('SInput').value = (val === 'concise' ? CONCISE_S : DEFAULT_S).join(',');
+    clearConstraintsOnInputChanged('模板/清单已变更');
     scheduleCompute(0);
     saveState();
   });
 
-  // 设置变化
-  $('SInput').addEventListener('input', function () { scheduleCompute(); saveState(); });
-  $('TInput').addEventListener('input', function () { scheduleCompute(); saveState(); });
-  $('capInput').addEventListener('input', function () { scheduleCompute(); saveState(); });
-  $('rInput').addEventListener('input', function () { scheduleCompute(); saveState(); });
-  document.querySelectorAll('input[name=tmode]').forEach(function (radio) {
-    radio.addEventListener('change', function () {
-      state.tmode = radio.value;
-      renderSettings();
-      scheduleCompute();
-      saveState();
-    });
+  $('SInput').addEventListener('input', function () {
+    clearConstraintsOnInputChanged('清单已变更');
+    scheduleCompute();
+    saveState();
+  });
+
+  $('rInput').addEventListener('input', function () {
+    clearConstraintsOnInputChanged('红均数已变更');
+    scheduleCompute();
+    saveState();
   });
 
   $('btnAddConstraint').addEventListener('click', addConstraint);
-  $('btnNext').addEventListener('click', nextRound);
-  $('btnUndo').addEventListener('click', undo);
+  $('btnUndo').addEventListener('click', undoConstraint);
+  $('btnClearConstraints').addEventListener('click', clearConstraints);
   $('btnReset').addEventListener('click', resetAll);
+
   $('btnCopyAll').addEventListener('click', function () {
-    if (!state.candidates.length) {
-      renderMessage('error', '当前没有可复制的候选。');
+    if (!state.result || state.result.totalCount === 0 || state.result.totalCount > MAX_STORE) {
+      renderMessage('error', '当前没有可复制的候选明细（结果过多时仅可复制统计）。');
       return;
     }
-    copyText(buildCopyText(state.candidates));
+    copyText(buildCopyText(state.result.hits));
   });
 
-  // 初始化
+  // ---------- 初始化 ----------
   loadState();
   renderAll();
-  if ($('rInput').value !== '') {
+  if (state.rText !== '') {
     scheduleCompute(0);
   }
 })();

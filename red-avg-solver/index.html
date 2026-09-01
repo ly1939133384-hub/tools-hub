@@ -721,7 +721,7 @@
 
   function renderAll() {
     $('SInput').value = state.S.join(',');
-    $('rInput').value = state.rText;
+    // 🔴 2026-09-01 热修：绝不写回 rInput——输入框只认用户手打，任何程序写回都会抢输入/加 .0
     $('conVal').value = '';
     renderConstraints();
     renderResults();
@@ -874,6 +874,7 @@
         version: VERSION,
         S: state.S,
         rText: state.rText,
+        rRaw: state.rRaw,
         constraints: state.constraints.map(function (c) { return { type: c.type, val: c.val }; })
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -893,9 +894,12 @@
       }
       state.S = obj.S.slice();
       state.rText = obj.rText || '';
+      state.rRaw = obj.rRaw || obj.rText || '';
       state.constraints = obj.constraints.map(function (c) { return { type: c.type, val: c.val }; });
       undoStack = [];
       expanded = false;
+      // 🔴 热修：初始化时仅回填一次输入框（用户上次输入的原文，非去尾值），此后输入框不再被任何代码写回
+      $('rInput').value = state.rRaw;
     } catch (e) {
       try { localStorage.removeItem(STORAGE_KEY); } catch (e2) {}
     }

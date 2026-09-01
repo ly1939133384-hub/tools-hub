@@ -182,6 +182,7 @@
       <button class="btn primary" id="btnCopyAll">📋 复制全部</button>
     </div>
     <div class="stage-badge" id="stageBadge">阶段一：仅分组统计</div>
+    <div class="status" id="rNote"></div>
     <div class="status" id="status">请先填写清单（至少 2 个有效数）和红均数。</div>
     <div id="messageBox"></div>
     <div id="statsBox"></div>
@@ -219,6 +220,7 @@
       version: VERSION,
       S: DEFAULT_S.slice(),
       rText: '',
+      rRaw: '',
       constraints: [],
       result: null,
       messageKind: '',
@@ -459,7 +461,6 @@
       state.messageKind = 'error';
       state.messageText = invalidItems + '清单至少需要 2 个有效格子数。';
       state.rText = rParsed.ok ? rParsed.normalized : '';
-      if (rParsed.ok) $('rInput').value = rParsed.normalized;
       renderResults();
       return false;
     }
@@ -471,10 +472,11 @@
       return false;
     }
 
-    // 回填去尾显示
-    $('rInput').value = rParsed.normalized;
+    // 🔴 修复(2026-09-01)：不回填输入框——回填会把用户正在输入的 "4" 抢成 "4.0"，
+    // 导致无法输入十分位。输入框保持用户原文，去尾值仅存 state.rText 供结果区显示。
     state.S = sParsed.S.slice();
     state.rText = rParsed.normalized;
+    state.rRaw = $('rInput').value.trim();
 
     try {
       var result = enumerateCandidates(state.S, rParsed.rTenth, state.constraints);
@@ -700,6 +702,13 @@
     $('stageBadge').textContent = state.constraints.length > 0
       ? '阶段二：约束收敛'
       : '阶段一：仅分组统计';
+
+    // 去尾提示：输入原文与去尾值不同时告知（如输入 2.56，按 2.5 计算）
+    var rNote = '';
+    if (state.rText !== '' && state.rRaw !== '' && state.rRaw !== state.rText) {
+      rNote = '红均数按 ' + state.rText + ' 计算（输入 ' + state.rRaw + '，百分位已舍去）';
+    }
+    $('rNote').textContent = rNote;
 
     renderStats();
     renderDetails();

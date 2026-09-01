@@ -130,7 +130,7 @@
 <body>
 <div class="wrap">
   <h1>🔴 红均格反推 V2</h1>
-  <div class="subtitle">俱乐大玩家 · 格数种类可重复取用 · 两阶段披露 · 手动约束收敛</div>
+  <div class="subtitle">俱乐大玩家 · 输入红均数即得 n/总和/平均分组统计 · 约束逐步收敛</div>
 
   <div class="card">
     <h2>⚙️ 格子数与红均数</h2>
@@ -147,17 +147,7 @@
     </div>
     <div class="field">
       <label for="rInput">红均数 r（百分位直接舍去，如 2.56 按 2.5）</label>
-      <input id="rInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="例如 2.5">
-    </div>
-    <div class="inline-fields">
-      <div class="field">
-        <label for="TInput">格子总数 T（可选，留空不限制；填了=红色格子总和必须正好等于它）</label>
-        <input id="TInput" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="留空不限制">
-      </div>
-      <div class="field">
-        <label for="NInput">红色物品总数 N（可选，留空不限制；填了=红色物品个数不超过它，如填 8 算 ≤8 个）</label>
-        <input id="NInput" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="留空不限制">
-      </div>
+      <input id="rInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="例如 4.6">
     </div>
   </div>
 
@@ -167,8 +157,20 @@
       <div class="field">
         <label for="conType">约束类型</label>
         <select id="conType">
-          <option value="exist">存在 X 格物品</option>
-          <option value="count1">1 格物品个数 = N</option>
+          <optgroup label="红色物品数">
+            <option value="n_le">红色物品数 ≤ N</option>
+            <option value="n_eq">红色物品数 = N</option>
+            <option value="n_ge">红色物品数 ≥ N</option>
+          </optgroup>
+          <optgroup label="格子总数">
+            <option value="t_le">格子总数 ≤ T</option>
+            <option value="t_eq">格子总数 = T</option>
+            <option value="t_ge">格子总数 ≥ T</option>
+          </optgroup>
+          <optgroup label="其他">
+            <option value="exist">存在 X 格物品</option>
+            <option value="count1">1 格物品个数 = N</option>
+          </optgroup>
         </select>
       </div>
       <div class="field" style="min-width:110px">
@@ -207,13 +209,13 @@
   'use strict';
 
   var STORAGE_KEY = 'redAvgSolver_v2';
-  var VERSION = 2;
+  var VERSION = 3;   // V2.3：约束面板化（n/t 的 ≤/=/≥）+ 截图模式统计表
   var DEFAULT_S = [1, 2, 3, 4, 6, 8, 9, 12, 15, 16];
   var CONCISE_S = [1, 2, 3, 4, 6, 8, 12];
   var MAX_PRE = 1000000;
   var MAX_NODES = 500000;
   var MAX_STORE = 200;
-  var MAX_ITEMS = 50;   // V2.1 防爆：未填 T/N 时物品数默认上限（数学边界，非业务约束）
+  var MAX_ITEMS = 20;   // V2.3 防爆：未加 N 约束时物品数默认上限（游戏红物品 ≤20 合理；要更多就加约束）
   var AUTO_EXPAND = 50;
   var MANUAL_MAX = 199;
   var MAX_UNDO = 100;
@@ -231,8 +233,6 @@
       S: DEFAULT_S.slice(),
       rText: '',
       rRaw: '',
-      TRaw: '',
-      NRaw: '',
       constraints: [],
       result: null,
       messageKind: '',
@@ -370,90 +370,130 @@
     return { min: a, max: max };
   }
 
-  function enumerateCandidates(S, rTenth, T, N, constraints) {
-    // V2.2 种类模型：S=去重排序的格数种类；每种格数可重复取用；物品数 1..maxN
-    // T=格子总数（null=不限，填了=红色格子总和必须正好等于它）
-    // N=红色物品总数（null=不限，填了=红色物品个数必须 ≤ N）
+  function enumerateCandidates(S, rTenth, constraints) {
+    // V2.3 种类模型：S=去重排序的格数种类；每种格数可重复取用
+    // 截图模式：外层按 n 求整数总和候选（n*rTenth <= 10*T < n*(rTenth+1)，夹不住整数的 n 直接跳过）
+    // 统计计数用 DP（出现次数递归，不枚举组合 → n 多大都不爆）；明细仅在候选 ≤MAX_STORE 时枚举
+    var stats = {};   // stats[n] = { sum: count }
     var hits = [];
-    var stats = {};
     var totalCount = 0;
-    var nodes = 0;
     var maxS = S[S.length - 1];
-    var minS = S[0];
 
-    // 防爆：物品数上界（数学计算边界，不是业务约束）
-    // 填了 N → 就是 N；填了 T → 每物品至少 1 格，最多 T 个；都没填 → 默认 50
-    var maxN;
-    if (N !== null && N > 0) maxN = N;
-    else if (T !== null && T > 0) maxN = T;
-    else maxN = MAX_ITEMS;
+    // ---- 解析约束 → N/T 区间 ----
+    var N_hi = null, N_lo = null, N_eq = null;
+    var T_hi = null, T_lo = null, T_eq = null;
+    var exists = [], count1 = null;
+    var conflict = false;
+    for (var i = 0; i < constraints.length; i++) {
+      var c = constraints[i];
+      if (c.type === 'n_le') N_hi = (N_hi === null || c.val < N_hi) ? c.val : N_hi;
+      else if (c.type === 'n_ge') N_lo = (N_lo === null || c.val > N_lo) ? c.val : N_lo;
+      else if (c.type === 'n_eq') { if (N_eq !== null && N_eq !== c.val) conflict = true; N_eq = c.val; }
+      else if (c.type === 't_le') T_hi = (T_hi === null || c.val < T_hi) ? c.val : T_hi;
+      else if (c.type === 't_ge') T_lo = (T_lo === null || c.val > T_lo) ? c.val : T_lo;
+      else if (c.type === 't_eq') { if (T_eq !== null && T_eq !== c.val) conflict = true; T_eq = c.val; }
+      else if (c.type === 'exist') exists.push(c.val);
+      else if (c.type === 'count1') count1 = c.val;
+    }
+    var N_min = N_lo !== null ? N_lo : 1;
+    var N_max = N_hi !== null ? N_hi : (N_eq !== null ? N_eq : MAX_ITEMS);
+    if (N_eq !== null) {
+      // =N 是硬点：必须落在区间内，否则冲突；落内则收缩到该点
+      if (N_eq < N_min || N_eq > N_max) conflict = true;
+      N_min = N_eq;
+      N_max = N_eq;
+    }
+    if (N_min > N_max) conflict = true;
+    var T_min = T_lo, T_max = T_hi;
+    if (T_eq !== null) {
+      if (T_min !== null && T_eq < T_min) conflict = true;
+      if (T_max !== null && T_eq > T_max) conflict = true;
+      T_min = T_eq; T_max = T_eq;
+    }
+    if (T_min !== null && T_max !== null && T_min > T_max) conflict = true;
 
-    // 全局无解快判：最大格数 < 红均数 → 平均永远达不到
-    if (maxS * 10 < rTenth) {
+    if (conflict) return { hits: hits, stats: stats, totalCount: 0, truncated: false };
+    for (var e = 0; e < exists.length; e++) {
+      if (S.indexOf(exists[e]) === -1) return { hits: hits, stats: stats, totalCount: 0, truncated: false };
+    }
+    if (maxS * 10 < rTenth || N_max < 1) {
       return { hits: hits, stats: stats, totalCount: 0, truncated: false };
     }
-    // exist 约束要求的值不在种类里 → 0 候选
-    for (var e = 0; e < constraints.length; e++) {
-      if (constraints[e].type === 'exist' && S.indexOf(constraints[e].val) === -1) {
-        return { hits: hits, stats: stats, totalCount: 0, truncated: false };
+
+    // ---- 组合计数 DP：S[idx] 取 k 个，递归下一种（非降序=组合）----
+    function countCombos(n, T) {
+      var memo = {};
+      function dfs(idx, remainN, remainT) {
+        if (remainN === 0) return remainT === 0 ? 1 : 0;
+        if (idx >= S.length) return 0;
+        var key = idx + ',' + remainN + ',' + remainT;
+        if (memo[key] !== undefined) return memo[key];
+        // 剪枝：剩余全取最小也超 / 全取最大也不够
+        if (remainT < remainN * S[idx]) return 0;
+        if (remainT > remainN * maxS) return 0;
+        var val = S[idx];
+        var maxK = Math.min(remainN, Math.floor(remainT / val));
+        // count1 约束：val===1 时 k 必须等于 count1（或 0 若 count1 未设则任意）
+        if (val === 1 && count1 !== null) {
+          if (count1 > maxK || count1 > remainN) return 0;
+          maxK = count1;
+        }
+        // exist 约束：val 在 exists 里时 k 必须 ≥1
+        var minK = 0;
+        if (val !== 1 && exists.indexOf(val) !== -1) minK = 1;
+        if (val === 1 && count1 === null && exists.indexOf(1) !== -1) minK = 1;
+        var total = 0;
+        for (var k = minK; k <= maxK; k++) {
+          total += dfs(idx + 1, remainN - k, remainT - k * val);
+        }
+        memo[key] = total;
+        return total;
       }
-    }
-    // T 小于最小可能总和 → 0 候选
-    if (T !== null && T < minS) {
-      return { hits: hits, stats: stats, totalCount: 0, truncated: false };
+      return dfs(0, n, T);
     }
 
-    function passes(combo) {
-      for (var i = 0; i < constraints.length; i++) {
-        var c = constraints[i];
-        if (c.type === 'exist') {
-          if (combo.indexOf(c.val) === -1) return false;
-        } else if (c.type === 'count1') {
-          var ones = 0;
-          for (var j = 0; j < combo.length; j++) if (combo[j] === 1) ones++;
-          if (ones !== c.val) return false;
+    // ---- 阶段1：DP 计数统计 ----
+    var pairs = [];   // [n, T] 列表
+    var n0 = N_min < 1 ? 1 : N_min;
+    for (var n = n0; n <= N_max; n++) {
+      var Tlo = Math.ceil(n * rTenth / 10);
+      var Thi = Math.floor((n * (rTenth + 1) - 1) / 10);
+      if (T_min !== null && Tlo < T_min) Tlo = T_min;
+      if (T_max !== null && Thi > T_max) Thi = T_max;
+      if (Tlo > Thi) continue;
+      for (var T = Tlo; T <= Thi; T++) {
+        if (T < n * S[0] || T > n * maxS) continue;
+        var cnt = countCombos(n, T);
+        if (cnt > 0) {
+          if (!stats[n]) stats[n] = {};
+          stats[n][T] = cnt;
+          totalCount += cnt;
+          pairs.push([n, T]);
         }
       }
-      return true;
     }
 
-    function dfs(startIdx, depth, sum, n, parts) {
-      nodes++;
-      if (nodes > MAX_NODES) throw new Error('NODE_LIMIT');
-
-      // 命中判断（n≥1）：整数去尾匹配 floor(10*sum/n) === rTenth
-      // 升序枚举平均只增不减：当前已 ≥ r+0.1 → 后续只会更高 → 剪
-      if (n > 0) {
-        if (10 * sum >= n * (rTenth + 1)) return;
-        if (10 * sum >= n * rTenth &&
-            (T === null || sum === T) &&
-            (N === null || n <= N) &&
-            passes(parts)) {
-          totalCount++;
-          stats[n] = (stats[n] || 0) + 1;
-          if (hits.length < MAX_STORE) hits.push(parts.slice());
+    // ---- 阶段2：候选 ≤MAX_STORE 时才枚举明细 ----
+    if (totalCount <= MAX_STORE) {
+      function dfsFixed(startIdx, depth, sum, parts, n, T) {
+        if (depth === n) {
+          if (sum === T) hits.push(parts.slice());
+          return;
+        }
+        var remain = n - depth;
+        if (sum + S[startIdx] * remain > T) return;
+        if (sum + maxS * remain < T) return;
+        for (var i = startIdx; i < S.length; i++) {
+          parts.push(S[i]);
+          dfsFixed(i, depth + 1, sum + S[i], parts, n, T);
+          parts.pop();
         }
       }
-
-      // 深度上限（防爆）
-      if (depth >= maxN) return;
-      // N 已填且已到 → 不能再加
-      if (N !== null && n >= N) return;
-      // T 已填且 sum 已超 → 剪（只增不减）
-      if (T !== null && sum > T) return;
-      // 可达性下界剪枝：剩余全取最大格数也到不了 r → 剪
-      if (n > 0 && (sum + maxS * (maxN - n)) * 10 < maxN * rTenth) return;
-      // T 可达性：加一个最小格数就超 T → 剪（加 0 个的情况由命中判断覆盖；加满 maxN 个不适用）
-      if (T !== null && sum + minS > T) return;
-
-      for (var i = startIdx; i < S.length; i++) {
-        parts.push(S[i]);
-        dfs(i, depth + 1, sum + S[i], n + 1, parts);
-        parts.pop();
+      for (var p = 0; p < pairs.length; p++) {
+        dfsFixed(0, 0, 0, [], pairs[p][0], pairs[p][1]);
       }
     }
 
-    dfs(0, 0, 0, 0, []);
     return {
       hits: hits,
       stats: stats,
@@ -466,31 +506,6 @@
   function computeCandidates() {
     var sParsed = parseS($('SInput').value);
     var rParsed = parseR($('rInput').value);
-
-    // 可选手动约束：格子总数 T / 红色物品总数 N（留空=不限制）
-    var T = null, N = null;
-    var tRaw = $('TInput').value.trim();
-    var nRaw = $('NInput').value.trim();
-    if (tRaw !== '') {
-      if (!/^\d+$/.test(tRaw) || Number(tRaw) <= 0) {
-        state.result = null;
-        state.messageKind = 'error';
-        state.messageText = '格子总数 T 必须是正整数，或留空不限制。';
-        renderResults();
-        return false;
-      }
-      T = Number(tRaw);
-    }
-    if (nRaw !== '') {
-      if (!/^\d+$/.test(nRaw) || Number(nRaw) <= 0) {
-        state.result = null;
-        state.messageKind = 'error';
-        state.messageText = '红色物品总数 N 必须是正整数，或留空不限制。';
-        renderResults();
-        return false;
-      }
-      N = Number(nRaw);
-    }
 
     var invalidItems = sParsed.errors.length ? '已忽略非法项：' + sParsed.errors.join('、') + '；' : '';
 
@@ -515,11 +530,9 @@
     state.S = sParsed.S.slice();
     state.rText = rParsed.normalized;
     state.rRaw = $('rInput').value.trim();
-    state.TRaw = tRaw;
-    state.NRaw = nRaw;
 
     try {
-      var result = enumerateCandidates(state.S, rParsed.rTenth, T, N, state.constraints);
+      var result = enumerateCandidates(state.S, rParsed.rTenth, state.constraints);
       state.result = result;
       state.messageKind = 'ok';
       state.messageText = invalidItems ? invalidItems.replace(/；$/, '。') + '计算完成。' : '计算完成。';
@@ -553,7 +566,12 @@
 
   // ---------- 渲染 ----------
   function constraintText(c) {
-    if (c.type === 'total') return '红色物品总数 = ' + c.val;
+    if (c.type === 'n_le') return '红色物品数 ≤ ' + c.val;
+    if (c.type === 'n_eq') return '红色物品数 = ' + c.val;
+    if (c.type === 'n_ge') return '红色物品数 ≥ ' + c.val;
+    if (c.type === 't_le') return '格子总数 ≤ ' + c.val;
+    if (c.type === 't_eq') return '格子总数 = ' + c.val;
+    if (c.type === 't_ge') return '格子总数 ≥ ' + c.val;
     if (c.type === 'exist') return '存在 ' + c.val + ' 格物品';
     if (c.type === 'count1') return '1 格物品 = ' + c.val + ' 个';
     return c.type + ' ' + c.val;
@@ -637,23 +655,42 @@
     box.innerHTML = '';
     if (!state.result || state.result.totalCount === 0) return;
     var stats = state.result.stats;
-    var keys = [];
-    for (var k in stats) {
-      if (Object.prototype.hasOwnProperty.call(stats, k)) keys.push(Number(k));
+    var nKeys = [];
+    for (var n in stats) {
+      if (Object.prototype.hasOwnProperty.call(stats, n)) nKeys.push(Number(n));
     }
-    keys.sort(function (a, b) { return a - b; });
+    nKeys.sort(function (a, b) { return a - b; });
     var wrap = document.createElement('div');
     wrap.className = 'stats';
-    for (var i = 0; i < keys.length; i++) {
-      var row = document.createElement('div');
-      row.className = 'stat-row';
-      var left = document.createElement('span');
-      left.textContent = keys[i] + ' 个一组';
-      var right = document.createElement('span');
-      right.textContent = stats[keys[i]] + ' 种';
-      row.appendChild(left);
-      row.appendChild(right);
-      wrap.appendChild(row);
+    // 截图模式：n = 3（总和 = 14，平均 ≈4.67 → 舍去为 4.6）共 7 种
+    for (var i = 0; i < nKeys.length; i++) {
+      var n = nKeys[i];
+      var sumKeys = [];
+      for (var s in stats[n]) {
+        if (Object.prototype.hasOwnProperty.call(stats[n], s)) sumKeys.push(Number(s));
+      }
+      sumKeys.sort(function (a, b) { return a - b; });
+      for (var j = 0; j < sumKeys.length; j++) {
+        var sum = sumKeys[j];
+        var cnt = stats[n][sum];
+        var avg = sum / n;
+        var truncated = Math.floor(avg * 10) / 10;
+        var avgStr;
+        if (avg * 10 === Math.round(avg * 10)) {
+          avgStr = '平均 = ' + avg;
+        } else {
+          avgStr = '平均 ≈' + avg.toFixed(2) + ' → 舍去为 ' + truncated;
+        }
+        var row = document.createElement('div');
+        row.className = 'stat-row';
+        var left = document.createElement('span');
+        left.textContent = 'n = ' + n + '（总和 = ' + sum + '，' + avgStr + '）';
+        var right = document.createElement('span');
+        right.textContent = '共 ' + cnt + ' 种';
+        row.appendChild(left);
+        row.appendChild(right);
+        wrap.appendChild(row);
+      }
     }
     var totalRow = document.createElement('div');
     totalRow.className = 'stat-row total';
@@ -672,11 +709,11 @@
     listBox.innerHTML = '';
     if (!state.result || state.result.totalCount === 0) return;
 
-    // 阶段一（无约束且未填 T/N）：只显示分组统计，不显示明细
-    if (state.constraints.length === 0 && state.TRaw === '' && state.NRaw === '') {
+    // 阶段一（无约束）：只显示分组统计，不显示明细
+    if (state.constraints.length === 0) {
       var tip = document.createElement('div');
       tip.className = 'status';
-      tip.textContent = '当前为阶段一：仅显示分组统计。添加约束或填写格子总数/红色物品总数后自动展开明细。';
+      tip.textContent = '当前为阶段一：仅显示分组统计。添加约束后自动展开明细。';
       listBox.appendChild(tip);
       return;
     }
@@ -737,7 +774,7 @@
     var count = state.result ? state.result.totalCount : 0;
     $('candCount').textContent = (state.rText === '' && !state.result) ? '-' : String(count);
 
-    $('stageBadge').textContent = (state.constraints.length > 0 || state.TRaw !== '' || state.NRaw !== '')
+    $('stageBadge').textContent = state.constraints.length > 0
       ? '阶段二：约束收敛'
       : '阶段一：仅分组统计';
 
@@ -876,8 +913,6 @@
     expanded = false;
     $('SInput').value = state.S.join(',');
     $('rInput').value = '';
-    $('TInput').value = '';
-    $('NInput').value = '';
     $('conVal').value = '';
     renderAll();
     saveState();
@@ -896,7 +931,7 @@
     if (!Array.isArray(obj.constraints)) return false;
     for (var j = 0; j < obj.constraints.length; j++) {
       var c = obj.constraints[j];
-      if (!c || ['total', 'exist', 'count1'].indexOf(c.type) === -1) return false;
+      if (!c || ['n_le', 'n_eq', 'n_ge', 't_le', 't_eq', 't_ge', 'exist', 'count1'].indexOf(c.type) === -1) return false;
       if (!Number.isInteger(c.val) || c.val <= 0) return false;
     }
     return true;
@@ -909,8 +944,6 @@
         S: state.S,
         rText: state.rText,
         rRaw: state.rRaw,
-        TRaw: state.TRaw,
-        NRaw: state.NRaw,
         constraints: state.constraints.map(function (c) { return { type: c.type, val: c.val }; })
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -931,15 +964,11 @@
       state.S = obj.S.slice();
       state.rText = obj.rText || '';
       state.rRaw = obj.rRaw || obj.rText || '';
-      state.TRaw = obj.TRaw || '';
-      state.NRaw = obj.NRaw || '';
       state.constraints = obj.constraints.map(function (c) { return { type: c.type, val: c.val }; });
       undoStack = [];
       expanded = false;
       // 🔴 热修：初始化时仅回填一次输入框（用户上次输入的原文，非去尾值），此后输入框不再被任何代码写回
       $('rInput').value = state.rRaw;
-      $('TInput').value = state.TRaw;
-      $('NInput').value = state.NRaw;
     } catch (e) {
       try { localStorage.removeItem(STORAGE_KEY); } catch (e2) {}
     }
@@ -1019,16 +1048,6 @@
 
   $('rInput').addEventListener('input', function () {
     clearConstraintsOnInputChanged('红均数已变更');
-    scheduleCompute();
-    saveState();
-  });
-
-  $('TInput').addEventListener('input', function () {
-    scheduleCompute();
-    saveState();
-  });
-
-  $('NInput').addEventListener('input', function () {
     scheduleCompute();
     saveState();
   });

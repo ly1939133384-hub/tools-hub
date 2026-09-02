@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>红均格反推 V2 · 俱乐大玩家</title>
+<title>MeanCombo Solver · 均值组合求解器</title>
 <style>
   :root {
     --bg: #f4f5f7;
@@ -130,8 +130,8 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>🔴 红均格反推 V2</h1>
-  <div class="subtitle">俱乐大玩家 · 输入红均数即得 n/总和/平均分组统计 · 约束逐步收敛</div>
+  <h1>🔴 MeanCombo Solver</h1>
+  <div class="subtitle">均值组合求解器 · 已知平均与元素集合，反推全部可能组合 · 约束逐步收敛</div>
 
   <div class="card">
     <h2>⚙️ 格子数与红均数</h2>
@@ -240,14 +240,14 @@
     </details>
   </div>
 
-  <div class="footer">红均格反推 V2.4 · 零依赖纯本地计算 · 全部数据仅存本机浏览器</div>
+  <div class="footer">MeanCombo Solver V2.5 · 零依赖纯本地计算 · 全部数据仅存本机浏览器</div>
 </div>
 
 <script>
 (function () {
   'use strict';
 
-  var STORAGE_KEY = 'redAvgSolver_v2';
+  var STORAGE_KEY = 'meancombo_solver_v2';
   var VERSION = 3;   // V2.3：约束面板化（n/t 的 ≤/=/≥）+ 截图模式统计表
   var DEFAULT_S = [1, 2, 3, 4, 6, 8, 9, 12, 15, 16];
   var CONCISE_S = [1, 2, 3, 4, 6, 8, 12];
@@ -716,7 +716,7 @@
 
   function buildCopyText(comboList) {
     var lines = [];
-    lines.push('【红均格反推V2·俱乐大玩家】');
+    lines.push('【MeanCombo Solver】');
     lines.push('当前候选：' + comboList.length + ' 种');
     for (var i = 0; i < comboList.length; i++) {
       lines.push(comboLabel(comboList[i]));

@@ -169,7 +169,9 @@
             <option value="t_ge">格子总数 ≥ T</option>
           </optgroup>
           <optgroup label="其他">
-            <option value="existN">存在 X 格的物品 Y 个（格数,个数）</option>
+            <option value="existN">存在 X 格的物品恰好 Y 个（格数,个数）</option>
+            <option value="existGE">存在 X 格的物品至少 Y 个（格数,个数）</option>
+            <option value="existLE">存在 X 格的物品至多 Y 个（格数,个数）</option>
             <option value="count1">1 格物品个数 = N</option>
           </optgroup>
         </select>
@@ -421,7 +423,7 @@
     // ---- 解析约束 → N/T 区间 ----
     var N_hi = null, N_lo = null, N_eq = null;
     var T_hi = null, T_lo = null, T_eq = null;
-    var exists = [], existsN = [], count1 = null;
+    var exists = [], existsN = [], existsGE = [], existsLE = [], count1 = null;
     var conflict = false;
     for (var i = 0; i < constraints.length; i++) {
       var c = constraints[i];
@@ -431,15 +433,47 @@
       else if (c.type === 't_le') T_hi = (T_hi === null || c.val < T_hi) ? c.val : T_hi;
       else if (c.type === 't_ge') T_lo = (T_lo === null || c.val > T_lo) ? c.val : T_lo;
       else if (c.type === 't_eq') { if (T_eq !== null && T_eq !== c.val) conflict = true; T_eq = c.val; }
-      else if (c.type === 'existN') existsN.push({ val: c.val, cnt: c.cnt });
+      else if (c.type === 'existN') existsN.push({ val: c.val, cnt: c.cnt });       // 恰好 Y 个
+      else if (c.type === 'existGE') existsGE.push({ val: c.val, cnt: c.cnt });     // 至少 Y 个
+      else if (c.type === 'existLE') existsLE.push({ val: c.val, cnt: c.cnt });     // 至多 Y 个
       else if (c.type === 'exist') exists.push(c.val);
       else if (c.type === 'count1') count1 = c.val;
     }
-    // existN 同格数多个数量 → 冲突（如"4格2个"+"4格3个"）
-    for (var en1 = 0; en1 < existsN.length; en1++) {
-      for (var en2 = en1 + 1; en2 < existsN.length; en2++) {
-        if (existsN[en1].val === existsN[en2].val && existsN[en1].cnt !== existsN[en2].cnt) conflict = true;
-      }
+    // ---- exist 系约束按格数合并为区间 [minK, maxK]（恰好=硬点）----
+    // 同格数：恰好取唯一值（多个不同→冲突）；至少取 max；至多取 min；恰好必须落在 [至少, 至多] 内
+    var existsRanges = {};   // val -> { ge, le, exact }
+    for (var enx = 0; enx < existsN.length; enx++) {
+      var v1 = existsN[enx].val;
+      if (!existsRanges[v1]) existsRanges[v1] = { ge: 0, le: Infinity, exact: null };
+      var r1 = existsRanges[v1];
+      if (r1.exact !== null && r1.exact !== existsN[enx].cnt) conflict = true;
+      r1.exact = existsN[enx].cnt;
+    }
+    for (var eng = 0; eng < existsGE.length; eng++) {
+      var v2 = existsGE[eng].val;
+      if (!existsRanges[v2]) existsRanges[v2] = { ge: 0, le: Infinity, exact: null };
+      if (existsGE[eng].cnt > existsRanges[v2].ge) existsRanges[v2].ge = existsGE[eng].cnt;
+    }
+    for (var enl = 0; enl < existsLE.length; enl++) {
+      var v3 = existsLE[enl].val;
+      if (!existsRanges[v3]) existsRanges[v3] = { ge: 0, le: Infinity, exact: null };
+      if (existsLE[enl].cnt < existsRanges[v3].le) existsRanges[v3].le = existsLE[enl].cnt;
+    }
+    // count1 也是"恰好"语义（val=1），并入合并
+    if (count1 !== null) {
+      if (!existsRanges[1]) existsRanges[1] = { ge: 0, le: Infinity, exact: null };
+      var rc = existsRanges[1];
+      if (rc.exact !== null && rc.exact !== count1) conflict = true;
+      rc.exact = count1;
+    }
+    var existsRangeList = [];   // [{val, minK, maxK}]
+    for (var gk in existsRanges) {
+      var rk = existsRanges[gk];
+      if (rk.exact !== null && (rk.exact < rk.ge || rk.exact > rk.le)) conflict = true;
+      if (rk.ge > rk.le) conflict = true;
+      var lo = rk.ge, hi = rk.le;
+      if (rk.exact !== null) { lo = rk.exact; hi = rk.exact; }
+      existsRangeList.push({ val: Number(gk), minK: lo, maxK: hi });
     }
     var N_min = N_lo !== null ? N_lo : 1;
     var N_max = N_hi !== null ? N_hi : (N_eq !== null ? N_eq : MAX_ITEMS);
@@ -462,8 +496,8 @@
     for (var e = 0; e < exists.length; e++) {
       if (S.indexOf(exists[e]) === -1) return { hits: hits, stats: stats, totalCount: 0, truncated: false };
     }
-    for (var en = 0; en < existsN.length; en++) {
-      if (S.indexOf(existsN[en].val) === -1) return { hits: hits, stats: stats, totalCount: 0, truncated: false };
+    for (var en = 0; en < existsRangeList.length; en++) {
+      if (S.indexOf(existsRangeList[en].val) === -1) return { hits: hits, stats: stats, totalCount: 0, truncated: false };
     }
     if (maxS * 10 < rTenth || N_max < 1) {
       return { hits: hits, stats: stats, totalCount: 0, truncated: false };
@@ -483,18 +517,16 @@
         var val = S[idx];
         var maxK = Math.min(remainN, Math.floor(remainT / val));
         var minK = 0;
-        // existN 约束：val 命中时 k 必须恰好等于 cnt（精确约束，k=0 跳过也不允许）
-        for (var eni = 0; eni < existsN.length; eni++) {
-          if (val === existsN[eni].val) {
-            var need = existsN[eni].cnt;
-            if (need > maxK || need > remainN) return 0;
-            minK = need; maxK = need;
+        // exist 系区间约束（恰好/至少/至多已合并进 [minK, maxK]；恰好=硬点，k=0 跳过也不允许）
+        for (var eri = 0; eri < existsRangeList.length; eri++) {
+          if (val === existsRangeList[eri].val) {
+            var lo = existsRangeList[eri].minK;
+            var hi = existsRangeList[eri].maxK;
+            if (lo > maxK || lo > remainN) return 0;
+            if (hi < minK) return 0;
+            if (lo > minK) minK = lo;
+            if (hi < maxK) maxK = hi;
           }
-        }
-        // count1 约束：val===1 时 k 必须等于 count1
-        if (val === 1 && count1 !== null) {
-          if (count1 > maxK || count1 > remainN) return 0;
-          minK = count1; maxK = count1;
         }
         // 旧 exist 约束：val 在 exists 里时 k 必须 ≥1（不允许跳过）
         if (exists.indexOf(val) !== -1 && minK === 0) minK = 1;
@@ -536,15 +568,10 @@
         for (var i = 0; i < exists.length; i++) {
           if (parts.indexOf(exists[i]) === -1) return false;
         }
-        for (var i2 = 0; i2 < existsN.length; i2++) {
-          var needV = existsN[i2].val, needC = 0;
+        for (var i2 = 0; i2 < existsRangeList.length; i2++) {
+          var needV = existsRangeList[i2].val, needC = 0;
           for (var j2 = 0; j2 < parts.length; j2++) if (parts[j2] === needV) needC++;
-          if (needC !== existsN[i2].cnt) return false;
-        }
-        if (count1 !== null) {
-          var ones = 0;
-          for (var j3 = 0; j3 < parts.length; j3++) if (parts[j3] === 1) ones++;
-          if (ones !== count1) return false;
+          if (needC < existsRangeList[i2].minK || needC > existsRangeList[i2].maxK) return false;
         }
         return true;
       }
@@ -645,7 +672,9 @@
     if (c.type === 't_le') return '格子总数 ≤ ' + c.val;
     if (c.type === 't_eq') return '格子总数 = ' + c.val;
     if (c.type === 't_ge') return '格子总数 ≥ ' + c.val;
-    if (c.type === 'existN') return '存在 ' + c.val + ' 格的物品 ' + c.cnt + ' 个';
+    if (c.type === 'existN') return '存在 ' + c.val + ' 格的物品恰好 ' + c.cnt + ' 个';
+    if (c.type === 'existGE') return '存在 ' + c.val + ' 格的物品至少 ' + c.cnt + ' 个';
+    if (c.type === 'existLE') return '存在 ' + c.val + ' 格的物品至多 ' + c.cnt + ' 个';
     if (c.type === 'exist') return '存在 ' + c.val + ' 格物品';
     if (c.type === 'count1') return '1 格物品 = ' + c.val + ' 个';
     return c.type + ' ' + c.val;
@@ -927,8 +956,8 @@
     var type = $('conType').value;
     var valStr = $('conVal').value.trim();
     var val, cnt = null;
-    if (type === 'existN') {
-      // 格式：格数,个数（如 4,2 = 存在 4 格的物品 2 个）
+    if (type === 'existN' || type === 'existGE' || type === 'existLE') {
+      // 格式：格数,个数（如 4,2 = 存在 4 格的物品 2 个；至少/至多同理）
       var parts = valStr.split(/[,，]/);
       if (parts.length !== 2 || !/^\d+$/.test(parts[0].trim()) || !/^\d+$/.test(parts[1].trim())) {
         renderMessage('error', '"存在 X 格的物品 Y 个"请填格式：格数,个数（如 4,2）。');
@@ -958,7 +987,7 @@
         return;
       }
     }
-    if ((type === 'existN' || type === 'exist') && sParsed.S.indexOf(val) === -1) {
+    if ((type === 'existN' || type === 'existGE' || type === 'existLE' || type === 'exist') && sParsed.S.indexOf(val) === -1) {
       renderMessage('error', '清单中没有 ' + val + ' 格物品。');
       return;
     }
@@ -1022,9 +1051,9 @@
     if (!Array.isArray(obj.constraints)) return false;
     for (var j = 0; j < obj.constraints.length; j++) {
       var c = obj.constraints[j];
-      if (!c || ['n_le', 'n_eq', 'n_ge', 't_le', 't_eq', 't_ge', 'existN', 'exist', 'count1'].indexOf(c.type) === -1) return false;
+      if (!c || ['n_le', 'n_eq', 'n_ge', 't_le', 't_eq', 't_ge', 'existN', 'existGE', 'existLE', 'exist', 'count1'].indexOf(c.type) === -1) return false;
       if (!Number.isInteger(c.val) || c.val <= 0) return false;
-      if (c.type === 'existN' && (!Number.isInteger(c.cnt) || c.cnt <= 0)) return false;
+      if ((c.type === 'existN' || c.type === 'existGE' || c.type === 'existLE') && (!Number.isInteger(c.cnt) || c.cnt <= 0)) return false;
     }
     return true;
   }

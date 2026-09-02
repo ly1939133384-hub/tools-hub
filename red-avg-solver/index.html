@@ -109,7 +109,8 @@
     background: #fbfcfe; font-size: 16px;
   }
   .cand-row .combo { font-family: Consolas, Menlo, monospace; }
-  .cand-row.single { background: var(--green-bg); border-color: #7fd1a0; font-weight: 600; }
+  .cand-row.single { background: linear-gradient(135deg, #e8f8ee, #d3f2e0); border: 2px solid #34a853; font-weight: 700; box-shadow: 0 0 10px rgba(52, 168, 83, 0.25); }
+  .unique-tip { margin-top: 10px; padding: 10px 14px; background: linear-gradient(135deg, #34a853, #188038); color: #fff; border-radius: 8px; font-size: 17px; font-weight: 800; text-align: center; box-shadow: 0 2px 8px rgba(24, 128, 56, 0.35); }
   .cand-row .copy-btn { min-height: 36px; padding: 4px 10px; font-size: 14px; }
   .truncated { color: #b26a00; font-size: 14px; margin-top: 8px; }
   .collapse-btn { margin-top: 10px; }
@@ -168,14 +169,14 @@
             <option value="t_ge">格子总数 ≥ T</option>
           </optgroup>
           <optgroup label="其他">
-            <option value="exist">存在 X 格物品</option>
+            <option value="existN">存在 X 格的物品 Y 个（格数,个数）</option>
             <option value="count1">1 格物品个数 = N</option>
           </optgroup>
         </select>
       </div>
       <div class="field" style="min-width:110px">
         <label for="conVal">数值</label>
-        <input id="conVal" type="number" min="1" step="1" inputmode="numeric" placeholder="N / X">
+        <input id="conVal" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="N / X 或 格数,个数">
       </div>
     </div>
     <button class="btn primary" id="btnAddConstraint" style="width:100%;margin-top:4px">➕ 添加约束</button>
@@ -201,7 +202,45 @@
     <div id="manualBox"></div>
   </div>
 
-  <div class="footer">红均格反推 V2 · 零依赖纯本地计算 · localStorage key redAvgSolver_v2</div>
+  <div class="card">
+    <details>
+      <summary>📖 使用说明（点开看）</summary>
+      <div style="font-size:14px;line-height:1.8;color:#333">
+        <p><b>一句话：</b>已知红色物品的格数种类和平均格数（红均数），反推所有可能的物品个数与组合。</p>
+        <p><b>第一步</b>：填"格子数"（有哪些格数的物品，重复自动去重，如 1,2,2,3,5 按 1,2,3,5 算）。<br>
+        <b>第二步</b>：填"红均数"（百分位直接舍去，如 2.56 按 2.5 算）。<br>
+        <b>第三步</b>：看分组统计——每行是"物品个数 n + 格子总和 + 平均验证 + 组合种数"，直接告诉你哪些 n 可能、每种多少组合。<br>
+        <b>第四步</b>：逐步加约束收敛（红色物品数 ≤/=/≥、格子总数 ≤/=/≥、存在 X 格的物品 Y 个、1 格物品个数），候选 ≤50 自动展开明细。<br>
+        <b>第五步</b>：唯一解会绿色高亮横幅提示；"📋 复制全部"可一键复制答案。</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>🎯 示例动线（按图走一遍）</summary>
+      <div style="font-size:14px;line-height:1.8;color:#333">
+        <p><b>题目</b>：格数 1,2,3,4,6,8,9,12,15,16，红均数 4.6，物品数小于 8（可重复），求可能的组合。</p>
+        <p><b>① 填数</b>：格子数填 <code>1,2,3,4,6,8,9,12,15,16</code>，红均数填 <code>4.6</code>。<br>
+        <b>② 看统计</b>：立刻出 <code>n=3（总和14，平均≈4.67→4.6）共7种</code>、<code>n=5（总和23）共36种</code>、<code>n=6（总和28）共78种</code>；n=1,2,4,7 自动跳过（平均数夹不住整数，无解）。<br>
+        <b>③ 加约束</b>：选"红色物品数 ≤ N"填 7 → 只剩 n=3/5/6 共 121 种。<br>
+        <b>④ 锁死</b>：选"红色物品数 = N"填 3 → 只剩 n=3 的 7 种明细：1+1+12、1+4+9、2+3+9、2+4+8、2+6+6、3+3+8、4+4+6。<br>
+        <b>⑤ 抄答案</b>：点"📋 复制全部"发给你朋友。</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>⚠️ 免责声明</summary>
+      <div style="font-size:14px;line-height:1.8;color:#666">
+        <p>本工具是<b>纯数学组合枚举器</b>：输入已知条件（格数种类 + 平均格数），穷举所有满足数学条件的组合。它<b>不做任何游戏自动操作、不读取游戏数据、不模拟点击</b>，只是把"平均数反推"这道数学题算给你看。</p>
+        <p>所有计算<b>100% 在本机浏览器内完成</b>，不联网、不上传任何数据、无任何外挂功能。最终结果仅供参考，是否采用由你自行判断；任何游戏的使用条款请自行遵守，本工具不对游戏账号后果负责。</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="footer">红均格反推 V2.4 · 零依赖纯本地计算 · 全部数据仅存本机浏览器</div>
 </div>
 
 <script>
@@ -382,7 +421,7 @@
     // ---- 解析约束 → N/T 区间 ----
     var N_hi = null, N_lo = null, N_eq = null;
     var T_hi = null, T_lo = null, T_eq = null;
-    var exists = [], count1 = null;
+    var exists = [], existsN = [], count1 = null;
     var conflict = false;
     for (var i = 0; i < constraints.length; i++) {
       var c = constraints[i];
@@ -392,8 +431,15 @@
       else if (c.type === 't_le') T_hi = (T_hi === null || c.val < T_hi) ? c.val : T_hi;
       else if (c.type === 't_ge') T_lo = (T_lo === null || c.val > T_lo) ? c.val : T_lo;
       else if (c.type === 't_eq') { if (T_eq !== null && T_eq !== c.val) conflict = true; T_eq = c.val; }
+      else if (c.type === 'existN') existsN.push({ val: c.val, cnt: c.cnt });
       else if (c.type === 'exist') exists.push(c.val);
       else if (c.type === 'count1') count1 = c.val;
+    }
+    // existN 同格数多个数量 → 冲突（如"4格2个"+"4格3个"）
+    for (var en1 = 0; en1 < existsN.length; en1++) {
+      for (var en2 = en1 + 1; en2 < existsN.length; en2++) {
+        if (existsN[en1].val === existsN[en2].val && existsN[en1].cnt !== existsN[en2].cnt) conflict = true;
+      }
     }
     var N_min = N_lo !== null ? N_lo : 1;
     var N_max = N_hi !== null ? N_hi : (N_eq !== null ? N_eq : MAX_ITEMS);
@@ -416,6 +462,9 @@
     for (var e = 0; e < exists.length; e++) {
       if (S.indexOf(exists[e]) === -1) return { hits: hits, stats: stats, totalCount: 0, truncated: false };
     }
+    for (var en = 0; en < existsN.length; en++) {
+      if (S.indexOf(existsN[en].val) === -1) return { hits: hits, stats: stats, totalCount: 0, truncated: false };
+    }
     if (maxS * 10 < rTenth || N_max < 1) {
       return { hits: hits, stats: stats, totalCount: 0, truncated: false };
     }
@@ -424,8 +473,8 @@
     function countCombos(n, T) {
       var memo = {};
       function dfs(idx, remainN, remainT) {
-        if (remainN === 0) return remainT === 0 ? 1 : 0;
-        if (idx >= S.length) return 0;
+        // 必须遍历完所有格数种类（idx 到末尾）再判定——保证 existN/exist 的"禁止跳过"生效
+        if (idx >= S.length) return (remainN === 0 && remainT === 0) ? 1 : 0;
         var key = idx + ',' + remainN + ',' + remainT;
         if (memo[key] !== undefined) return memo[key];
         // 剪枝：剩余全取最小也超 / 全取最大也不够
@@ -433,15 +482,23 @@
         if (remainT > remainN * maxS) return 0;
         var val = S[idx];
         var maxK = Math.min(remainN, Math.floor(remainT / val));
-        // count1 约束：val===1 时 k 必须等于 count1（或 0 若 count1 未设则任意）
+        var minK = 0;
+        // existN 约束：val 命中时 k 必须恰好等于 cnt（精确约束，k=0 跳过也不允许）
+        for (var eni = 0; eni < existsN.length; eni++) {
+          if (val === existsN[eni].val) {
+            var need = existsN[eni].cnt;
+            if (need > maxK || need > remainN) return 0;
+            minK = need; maxK = need;
+          }
+        }
+        // count1 约束：val===1 时 k 必须等于 count1
         if (val === 1 && count1 !== null) {
           if (count1 > maxK || count1 > remainN) return 0;
-          maxK = count1;
+          minK = count1; maxK = count1;
         }
-        // exist 约束：val 在 exists 里时 k 必须 ≥1
-        var minK = 0;
-        if (val !== 1 && exists.indexOf(val) !== -1) minK = 1;
-        if (val === 1 && count1 === null && exists.indexOf(1) !== -1) minK = 1;
+        // 旧 exist 约束：val 在 exists 里时 k 必须 ≥1（不允许跳过）
+        if (exists.indexOf(val) !== -1 && minK === 0) minK = 1;
+        if (minK > maxK) return 0;
         var total = 0;
         for (var k = minK; k <= maxK; k++) {
           total += dfs(idx + 1, remainN - k, remainT - k * val);
@@ -475,9 +532,25 @@
 
     // ---- 阶段2：候选 ≤MAX_STORE 时才枚举明细 ----
     if (totalCount <= MAX_STORE) {
+      function passes(parts) {
+        for (var i = 0; i < exists.length; i++) {
+          if (parts.indexOf(exists[i]) === -1) return false;
+        }
+        for (var i2 = 0; i2 < existsN.length; i2++) {
+          var needV = existsN[i2].val, needC = 0;
+          for (var j2 = 0; j2 < parts.length; j2++) if (parts[j2] === needV) needC++;
+          if (needC !== existsN[i2].cnt) return false;
+        }
+        if (count1 !== null) {
+          var ones = 0;
+          for (var j3 = 0; j3 < parts.length; j3++) if (parts[j3] === 1) ones++;
+          if (ones !== count1) return false;
+        }
+        return true;
+      }
       function dfsFixed(startIdx, depth, sum, parts, n, T) {
         if (depth === n) {
-          if (sum === T) hits.push(parts.slice());
+          if (sum === T && passes(parts)) hits.push(parts.slice());
           return;
         }
         var remain = n - depth;
@@ -572,6 +645,7 @@
     if (c.type === 't_le') return '格子总数 ≤ ' + c.val;
     if (c.type === 't_eq') return '格子总数 = ' + c.val;
     if (c.type === 't_ge') return '格子总数 ≥ ' + c.val;
+    if (c.type === 'existN') return '存在 ' + c.val + ' 格的物品 ' + c.cnt + ' 个';
     if (c.type === 'exist') return '存在 ' + c.val + ' 格物品';
     if (c.type === 'count1') return '1 格物品 = ' + c.val + ' 个';
     return c.type + ' ' + c.val;
@@ -750,9 +824,7 @@
       }
       if (count === 1) {
         var uniqueTip = document.createElement('div');
-        uniqueTip.className = 'status';
-        uniqueTip.style.color = '#188038';
-        uniqueTip.style.fontWeight = '700';
+        uniqueTip.className = 'unique-tip';
         uniqueTip.textContent = '✅ 唯一解，就是它！';
         listBox.appendChild(uniqueTip);
       }
@@ -853,10 +925,27 @@
   function addConstraint() {
     if (computing) return;
     var type = $('conType').value;
-    var val = Number($('conVal').value);
-    if (!Number.isInteger(val) || val <= 0) {
-      renderMessage('error', '约束数值必须是正整数。');
-      return;
+    var valStr = $('conVal').value.trim();
+    var val, cnt = null;
+    if (type === 'existN') {
+      // 格式：格数,个数（如 4,2 = 存在 4 格的物品 2 个）
+      var parts = valStr.split(/[,，]/);
+      if (parts.length !== 2 || !/^\d+$/.test(parts[0].trim()) || !/^\d+$/.test(parts[1].trim())) {
+        renderMessage('error', '"存在 X 格的物品 Y 个"请填格式：格数,个数（如 4,2）。');
+        return;
+      }
+      val = Number(parts[0].trim());
+      cnt = Number(parts[1].trim());
+      if (val <= 0 || cnt <= 0) {
+        renderMessage('error', '格数和个数都必须是正整数。');
+        return;
+      }
+    } else {
+      val = Number(valStr);
+      if (!Number.isInteger(val) || val <= 0) {
+        renderMessage('error', '约束数值必须是正整数。');
+        return;
+      }
     }
     var sParsed = parseS($('SInput').value);
     if (sParsed.S.length < 2) {
@@ -869,13 +958,15 @@
         return;
       }
     }
-    if (type === 'exist' && sParsed.S.indexOf(val) === -1) {
+    if ((type === 'existN' || type === 'exist') && sParsed.S.indexOf(val) === -1) {
       renderMessage('error', '清单中没有 ' + val + ' 格物品。');
       return;
     }
     state.noticeText = '';
     pushUndo();
-    state.constraints.push({ type: type, val: val });
+    var con = { type: type, val: val };
+    if (cnt !== null) con.cnt = cnt;
+    state.constraints.push(con);
     expanded = false;
     $('conVal').value = '';
     renderConstraints();
@@ -931,8 +1022,9 @@
     if (!Array.isArray(obj.constraints)) return false;
     for (var j = 0; j < obj.constraints.length; j++) {
       var c = obj.constraints[j];
-      if (!c || ['n_le', 'n_eq', 'n_ge', 't_le', 't_eq', 't_ge', 'exist', 'count1'].indexOf(c.type) === -1) return false;
+      if (!c || ['n_le', 'n_eq', 'n_ge', 't_le', 't_eq', 't_ge', 'existN', 'exist', 'count1'].indexOf(c.type) === -1) return false;
       if (!Number.isInteger(c.val) || c.val <= 0) return false;
+      if (c.type === 'existN' && (!Number.isInteger(c.cnt) || c.cnt <= 0)) return false;
     }
     return true;
   }

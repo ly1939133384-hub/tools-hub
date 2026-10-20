@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>六西格玛黑带 120 题 · 自测答题</title>
+<style>
+:root{
+  --bg:#f4f4ef;
+  --panel:#ffffff;
+  --ink:#1c2321;
+  --ink2:#5a6663;
+  --ink3:#8a9491;
+  --line:#e3e2da;
+  --line2:#d3d2c8;
+  --accent:#2b6a5c;
+  --accent-2:#3d8574;
+  --accent-soft:#e9f1ed;
+  --ok:#1f7a4d;
+  --ok-soft:#e9f5ee;
+  --bad:#b23a2e;
+  --bad-soft:#fbedea;
+  --amber:#a97c15;
+  --amber-soft:#fdf5e2;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","STSong","SimSun","Source Han Serif SC",Georgia,serif;
+  --mono:ui-monospace,SFMono-Regular,"Cascadia Mono",Consolas,monospace;
+  --r:14px;
+  --shadow:0 1px 2px rgba(28,35,33,.04),0 8px 24px -16px rgba(28,35,33,.28);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 600px at 80% -10%, #e8eee9 0%, rgba(232,238,233,0) 60%),
+    var(--bg);
+  color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+::selection{background:#cfe3da}
+
+/* ---------- 顶栏 ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:rgba(250,250,246,.97);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.topbar-in{max-width:1180px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.02em}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.brand small{display:block;font-weight:400;color:var(--ink3);font-size:11px;letter-spacing:.06em}
+.modes{display:flex;gap:2px;background:#eeeee8;padding:3px;border-radius:10px;margin-left:auto;flex-wrap:wrap}
+.modes button{
+  border:0;background:transparent;padding:7px 13px;border-radius:8px;color:var(--ink2);
+  font-size:13.5px;font-weight:600;transition:.16s;white-space:nowrap
+}
+.modes button:hover{color:var(--ink);background:#f6f6f1}
+.modes button.on{background:#fff;color:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.hud{display:flex;align-items:center;gap:14px;font-size:12.5px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.hud b{color:var(--ink);font-size:14px}
+.hud .sep{width:1px;height:20px;background:var(--line2)}
+@media(max-width:600px){
+  .chip{padding:5px 10px;font-size:12px}
+  .filters{gap:6px}
+  .sel select{padding:6px 26px 6px 10px;font-size:12.5px}
+  .btn.sm{padding:5px 9px;font-size:12px}
+  .stem{font-size:17px}
+  .aside .panel.pad{padding:12px 14px}
+}
+@media(max-width:820px){
+  .topbar-in{padding:8px 12px;gap:8px}
+  .modes{order:3;width:100%;margin:0;overflow-x:auto;flex-wrap:nowrap}
+  .hud{margin-left:auto;gap:10px}
+  .brand small{display:none}
+}
+
+/* ---------- 布局 ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding:22px 20px 80px}
+@media(max-width:820px){.wrap{padding:14px 12px 90px}}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 272px;gap:22px;align-items:start}
+@media(max-width:980px){.split{grid-template-columns:minmax(0,1fr)}}
+.aside{position:sticky;top:74px;display:flex;flex-direction:column;gap:14px}
+@media(max-width:980px){.aside{position:static;order:2}}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.pad{padding:16px 18px}
+
+/* ---------- 筛选条 ---------- */
+.deckbar{height:3px;background:#e6e6dd;border-radius:99px;margin:-3px 0 13px;overflow:hidden}
+.deckbar>i{display:block;height:100%;background:linear-gradient(90deg,#2b6a5c,#7fb2a4);border-radius:99px;transition:width .3s}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.sel{position:relative;display:inline-flex;align-items:center}
+.sel select{
+  appearance:none;border:1px solid var(--line2);background:#fff;border-radius:9px;
+  padding:7px 30px 7px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;max-width:220px
+}
+.sel::after{content:"";position:absolute;right:11px;top:50%;width:6px;height:6px;border-right:1.6px solid var(--ink3);border-bottom:1.6px solid var(--ink3);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.chip{
+  border:1px solid var(--line2);background:#fff;border-radius:999px;padding:6px 12px;
+  font-size:12.5px;font-weight:600;color:var(--ink2);transition:.14s
+}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip .n{opacity:.6;font-weight:500;margin-left:4px;font-variant-numeric:tabular-nums}
+.fsep{width:1px;height:20px;background:var(--line2);margin:0 3px}
+.filters .chip.scope{border-radius:8px}
+
+/* ---------- 题卡 ---------- */
+.qhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.qno{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:3px 8px;border-radius:6px}
+.tg{font-size:11.5px;color:var(--ink2);background:#f2f2ec;border-radius:6px;padding:3px 8px}
+.tg.ty{color:#7a5a12;background:var(--amber-soft)}
+.star{margin-left:auto;border:0;background:transparent;font-size:18px;line-height:1;color:#cfd3cd;padding:8px 10px;margin:-6px -6px -6px auto;border-radius:8px;min-width:38px;min-height:38px;cursor:pointer}
+.star.on{color:#e0a923}
+.star:hover{color:#e0a923;background:#f6f4ea}
+
+.stem{font-family:var(--serif);font-size:19.5px;line-height:1.75;margin:4px 0 18px;letter-spacing:.01em;overflow-wrap:anywhere}
+.stem b{font-weight:700;color:#12312a;background:linear-gradient(transparent 62%, #dcece4 62%)}
+@media(max-width:600px){.stem{font-size:17.5px}}
+
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt{
+  display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;
+  background:#fff;border:1.4px solid var(--line2);border-radius:11px;padding:12px 14px;
+  transition:.14s;line-height:1.6
+}
+.opt:hover:not(.locked){border-color:var(--accent-2);background:#fbfdfc;transform:translateX(1px)}
+.opt .k{
+  flex:0 0 24px;height:24px;border-radius:7px;background:#f1f1ea;color:var(--ink2);
+  display:grid;place-items:center;font-family:var(--mono);font-size:12.5px;font-weight:700;margin-top:1px
+}
+.opt .t{flex:1;min-width:0}
+.opt .mk{flex:0 0 auto;font-size:12px;font-weight:700;padding:1px 7px;border-radius:6px;display:none}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.opt.sel .k{background:var(--accent);color:#fff}
+.opt.locked{cursor:default}
+.opt.correct{border-color:var(--ok);background:var(--ok-soft)}
+.opt.correct .k{background:var(--ok);color:#fff}
+.opt.correct .mk{display:inline-block;color:var(--ok)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.wrong .k{background:var(--bad);color:#fff}
+.opt.wrong .mk{display:inline-block;color:var(--bad)}
+.opt.missed{border-color:var(--ok);border-style:dashed;background:var(--ok-soft)}
+.opt.missed .mk{display:inline-block;color:var(--ok)}
+.opt .why{display:block;font-size:12.5px;color:var(--ink2);margin-top:6px;padding-top:6px;border-top:1px dashed rgba(0,0,0,.09)}
+
+.acts{display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap}
+.btn{
+  border:1.4px solid var(--line2);background:#fff;border-radius:10px;padding:9px 16px;
+  font-size:14px;font-weight:600;transition:.14s;display:inline-flex;align-items:center;gap:6px
+}
+.btn:hover{border-color:var(--ink3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:#235a4e}
+.btn.primary:disabled{opacity:.42;cursor:not-allowed}
+.btn.ghost{background:transparent}
+.btn.sm{padding:6px 11px;font-size:12.5px;border-radius:8px}
+.btn.danger{color:var(--bad);border-color:#e8c9c5}
+.hint{font-size:12px;color:var(--ink3)}
+.fb-note{margin:10px 0 0;padding:8px 11px;border-radius:8px;background:var(--bad-soft);color:#8d3227;font-size:13px;line-height:1.65}
+.fb-note b{font-family:var(--mono)}
+
+/* ---------- 判题反馈 ---------- */
+.fb{margin-top:18px;border-radius:12px;overflow:hidden;border:1px solid var(--line);animation:rise .22s ease}
+@keyframes rise{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.fb-h{display:flex;align-items:center;gap:10px;padding:11px 14px;font-weight:700;font-size:14px}
+.fb.ok .fb-h{background:var(--ok-soft);color:var(--ok)}
+.fb.bad .fb-h{background:var(--bad-soft);color:var(--bad)}
+.fb-h .res{font-size:15px}
+.fb-h .ans{margin-left:auto;font-family:var(--mono);font-size:12.5px;font-weight:700;letter-spacing:.06em;background:rgba(255,255,255,.7);padding:2px 9px;border-radius:6px}
+.fb-body{padding:2px 15px 15px;background:#fff}
+.blk{margin-top:13px}
+.blk-t{font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--ink3);margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.blk-t::after{content:"";flex:1;height:1px;background:var(--line)}
+.md{font-size:14px;line-height:1.78;color:#28312f;overflow-wrap:anywhere}
+.md p{margin:.3em 0}
+.md ul{margin:.25em 0 .4em;padding-left:1.2em}
+.md li{margin:.16em 0}
+.md b{color:#12312a}
+.md code{font-family:var(--mono);font-size:12.5px;background:#f2f2ec;padding:1px 5px;border-radius:4px}
+.md-tb{width:100%;border-collapse:collapse;margin:.55em 0 .7em;font-size:13px;line-height:1.5;table-layout:auto}
+.md-tb th,.md-tb td{border:1px solid var(--line2);padding:6px 9px;text-align:left;vertical-align:top}
+.md-tb th{background:#f4f3ea;font-weight:700;color:#12312a;white-space:nowrap}
+.md-tb tbody tr:nth-child(even){background:#fbfaf4}
+@media(max-width:600px){
+  .md-tb{table-layout:fixed;width:100%;font-size:12px}
+  .md-tb th,.md-tb td{padding:5px 6px;word-break:break-word;overflow-wrap:anywhere}
+  .md-tb th{white-space:normal}
+}
+.memo{
+  background:var(--amber-soft);border-left:3px solid #d9a92c;border-radius:0 8px 8px 0;
+  padding:10px 13px;font-size:14px;line-height:1.7;color:#5c4708
+}
+.traps{list-style:none;padding:0;margin:0}
+.traps li{position:relative;padding-left:22px;margin:.32em 0;font-size:13.8px;color:#7a3229;line-height:1.7}
+.traps li::before{content:"!";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--bad-soft);color:var(--bad);font-size:10px;font-weight:800;display:grid;place-items:center;border:1px solid #edc8c2}
+.note{background:#f7f8f5;border:1px solid var(--line);border-radius:9px;padding:10px 13px;font-size:13.5px;color:var(--ink2)}
+.rel{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.rel button{font-size:12px;border:1px solid var(--line2);background:#fff;border-radius:7px;padding:3px 9px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.rel button:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ---------- 底部导航 ---------- */
+.qnav{display:flex;align-items:center;gap:10px;margin-top:16px}
+.qnav .pos{font-size:12.5px;color:var(--ink2);font-variant-numeric:tabular-nums;margin-left:auto}
+
+/* ---------- 侧栏 ---------- */
+.side-t{font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--ink3);margin:0 0 10px}
+.gridno{display:grid;grid-template-columns:repeat(auto-fill,minmax(30px,1fr));gap:5px;max-height:245px;overflow:auto;padding-right:4px;scrollbar-width:thin}
+.gn{
+  aspect-ratio:1;border:1px solid var(--line2);background:#fff;border-radius:6px;
+  font-family:var(--mono);font-size:11px;display:grid;place-items:center;color:var(--ink2);
+  font-variant-numeric:tabular-nums;transition:.12s;padding:0
+}
+.gn:hover{border-color:var(--accent);color:var(--accent)}
+.gn.ok{background:var(--ok-soft);border-color:#bcdccb;color:#186b42}
+.gn.bad{background:var(--bad-soft);border-color:#eec9c3;color:var(--bad)}
+.gn.cur{outline:2px solid var(--accent);outline-offset:1px;font-weight:800}
+.gn.todo{background:#fbfbf7;color:#a7aeaa}
+.legend{display:flex;gap:12px;font-size:11.5px;color:var(--ink3);margin-top:10px;flex-wrap:wrap}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mini div{background:#f8f8f3;border-radius:9px;padding:9px 10px}
+.mini b{display:block;font-size:19px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.mini span{font-size:11px;color:var(--ink3)}
+
+/* ---------- 考点 / 统计 ---------- */
+.h1{font-size:21px;font-weight:800;letter-spacing:-.01em;margin:0 0 4px}
+.sub{color:var(--ink2);font-size:13.5px;margin:0 0 18px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.chcard{border:1px solid var(--line);background:#fff;border-radius:12px;padding:14px;text-align:left;transition:.15s;box-shadow:var(--shadow)}
+.chcard:hover{border-color:var(--accent-2);transform:translateY(-1px)}
+.chcard .nm{font-weight:700;font-size:14.5px;margin-bottom:2px}
+.chcard .meta{font-size:11.5px;color:var(--ink3);font-variant-numeric:tabular-nums}
+.bar{height:5px;border-radius:99px;background:#ecece5;overflow:hidden;margin-top:10px}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.bar>i.low{background:#c9772b}
+.bar>i.bad{background:var(--bad)}
+.tagcloud{display:flex;flex-wrap:wrap;gap:6px}
+.taggroup{margin:0 0 14px}
+.taggroup h4{margin:0 0 7px;font-size:11.5px;font-weight:800;letter-spacing:.08em;color:var(--ink3);display:flex;align-items:center;gap:8px}
+.taggroup h4::after{content:"";flex:1;height:1px;background:var(--line)}
+.tagbtn{border:1px solid var(--line2);background:#fff;border-radius:8px;padding:5px 10px;font-size:12.5px;color:var(--ink2);display:inline-flex;gap:6px;align-items:center;transition:.13s}
+.tagbtn:hover{border-color:var(--accent);color:var(--accent)}
+.tagbtn .acc{font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:-.01em}
+.tagbtn .acc.g{color:var(--ok)}
+.tagbtn .acc.r{color:var(--bad)}
+table.tb{width:100%;border-collapse:collapse;font-size:13.5px}
+table.tb th.r{text-align:right}
+table.tb th{text-align:left;font-size:11.5px;letter-spacing:.08em;color:var(--ink3);font-weight:800;padding:6px 8px;border-bottom:1px solid var(--line)}
+table.tb td{padding:7px 8px;border-bottom:1px solid #f1f1ea;font-variant-numeric:tabular-nums}
+table.tb tr:last-child td{border-bottom:0}
+table.tb td.r{text-align:right}
+.cellbar{display:flex;align-items:center;gap:9px;justify-content:flex-end}
+.cellbar .bar{width:64px;margin:0;flex:0 0 64px}
+.cellbar span{min-width:38px}
+
+/* ---------- 错题 / 速记卡 / 速查 ---------- */
+.wrow{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid #f1f1ea}
+.wrow:last-child{border-bottom:0}
+.wrow .id{font-family:var(--mono);font-size:12px;color:var(--ink3);flex:0 0 34px;padding-top:2px}
+.wrow .bd{flex:1;min-width:0}
+.wrow .st{font-size:14px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wrow .mt{font-size:11.5px;color:var(--ink3);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.badge{display:inline-block;font-size:11px;font-weight:700;border-radius:5px;padding:1px 6px}
+.badge.r{background:var(--bad-soft);color:var(--bad)}
+.badge.g{background:var(--ok-soft);color:var(--ok)}
+.badge.n{background:#f1f1ea;color:var(--ink2)}
+
+.flash{
+  min-height:330px;display:flex;flex-direction:column;justify-content:center;
+  padding:26px 24px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);
+  position:relative;overflow:hidden
+}
+.flash::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--accent),#9fc3b6)}
+.flash .fq{font-family:var(--serif);font-size:18.5px;line-height:1.72}
+.flash .fopts{margin-top:14px;display:flex;flex-direction:column;gap:5px;font-size:13.5px;color:var(--ink2)}
+.flash .fopts .row{display:flex;gap:8px}
+.flash .fopts p{display:inline;margin:0}
+.flash .fopts .row+.row{margin-top:2px}
+.flash .fopts .k{font-family:var(--mono);font-size:12px;color:var(--ink3);flex:0 0 16px}
+.flash .fans{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line2);animation:rise .2s ease}
+.flash .fans .lab{font-size:11.5px;letter-spacing:.1em;font-weight:800;color:var(--ok);margin-bottom:8px}
+.flash .fans .ao{font-size:14px;margin:.25em 0;line-height:1.6}
+.flash .fans .ao b{font-family:var(--mono);color:var(--ok);margin-right:6px}
+
+.sheet-blk{margin-bottom:18px}
+.sheet-row{display:flex;gap:10px;padding:7px 0;border-bottom:1px dotted #e8e8e0;font-size:13.5px;line-height:1.72}
+.sheet-row .id{font-family:var(--mono);font-size:11.5px;color:var(--accent);flex:0 0 36px;padding-top:3px;cursor:pointer}
+.sheet-row .id:hover{text-decoration:underline}
+.sheet-row .tx p{display:inline;margin:0}
+.sheet-row .tx b{color:#12312a}
+.sheet-row .tx .tg{font-size:11px;margin-left:6px}
+.search{display:flex;gap:8px;align-items:center;margin-bottom:16px}
+.search input{
+  flex:1;border:1px solid var(--line2);border-radius:10px;padding:9px 13px;font-size:14px;font-family:inherit;background:#fff;outline:none
+}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+details.tipbox{background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 16px;margin-bottom:12px}
+details.tipbox summary{cursor:pointer;padding:12px 0;font-weight:700;font-size:14px;color:var(--accent)}
+details.tipbox .md{padding-bottom:14px}
+
+.empty{text-align:center;padding:46px 20px;color:var(--ink3)}
+.empty .big{font-size:15px;color:var(--ink2);margin-bottom:6px}
+.kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:1px 5px;color:var(--ink2);background:#fff}
+.foot{max-width:1180px;margin:0 auto;padding:0 20px 30px;color:var(--ink3);font-size:11.5px;line-height:1.8}
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);
+  background:#1c2321;color:#fff;padding:9px 16px;border-radius:10px;font-size:13px;opacity:0;
+  transition:.22s;pointer-events:none;z-index:99;box-shadow:0 8px 24px -8px rgba(0,0,0,.4)
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---------- 打印（速查页打印成纸质清单） ---------- */
+@media print{
+  body{background:#fff}
+  .topbar,.filters,.search,.toast,.foot,.acts,.deckbar,.qnav,.aside{display:none !important}
+  .wrap{padding:0;max-width:none}
+  .panel,details.tipbox{box-shadow:none;border-color:#ccc;break-inside:avoid}
+  .sheet-row{break-inside:avoid}
+  details.tipbox>summary{list-style:none}
+  details.tipbox .md{display:block !important}
+  details.tipbox::details-content{content-visibility:visible !important}
+}
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <span class="dot"></span>
+      <div>六西格玛黑带 120 题
+        <small>样题精解 · 自测答题版</small>
+      </div>
+    </div>
+    <nav class="modes">
+      <button data-act="mode" data-v="practice">练习</button>
+      <button data-act="mode" data-v="drill">按考点出题</button>
+      <button data-act="mode" data-v="wrong">错题本</button>
+      <button data-act="mode" data-v="cards">速记卡</button>
+      <button data-act="mode" data-v="stats">统计</button>
+      <button data-act="mode" data-v="sheet">速查</button>
+    </nav>
+    <div id="hud"></div>
+  </div>
+</header>
+
+<main class="wrap" id="app"></main>
+
+<div class="foot">
+  题库：《六西格玛黑带考试样题精解（120题全）V2 视觉核验版》，单选 1–84 / 多选 85–120，答案已与《答案核对表-120题》逐题比对一致。<br>
+  作答记录保存在本机浏览器（localStorage），不联网、不上传；换浏览器或清缓存会丢失，可在「统计」页导出 JSON。
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+window.QDATA = {"meta":{"title":"六西格玛黑带样题 120 题 · 答题版","source":"样题精解-完整讲义-V2-视觉核验版.md","count":120,"chapters":[{"id":"C1","name":"概论·领导与推进"},{"id":"C2","name":"组织·团队·变革"},{"id":"C3","name":"项目选择与经济性"},{"id":"C4","name":"定义·顾客与需求"},{"id":"C5","name":"流程工具与精益"},{"id":"C6","name":"统计基础"},{"id":"C7","name":"测量系统 MSA"},{"id":"C8","name":"过程能力与 SPC"},{"id":"C9","name":"统计推断与回归"},{"id":"C10","name":"DOE 与 DFSS"}]},"questions":[{"id":1,"type":"概念","tag":"领导作用","ch":"C1","stem":"六西格玛管理推行成功最关键的因素是：","options":[{"k":"A","t":"培训"},{"k":"B","t":"组织结构"},{"k":"C","t":"领导支持和参与"},{"k":"D","t":"项目计划"}],"answer":["C"],"note":"教材把\"领导的支持与参与\"列为六西格玛成功的首要条件——因为六西格玛是\"自上而下\"（top-down）的管理变革，培训、组织、项目都是领导决心的产物。记忆点：六西格玛与全面质量管理最大的差异之一就是**高层主导、财务挂钩**。","analysis":"推行六西格玛最关键的因素是**高层领导的支持和参与**（即\"领导作用\"），这是中国质协黑带考试反复强调的观点——其他选项（培训、组织结构、项目计划）都是必要条件，但不是\"最关键\"。","traps":["把\"培训/组织/项目计划\"等必要条件当成\"最关键\"因素"],"memory":"六西格玛成功靠车头：高层领导支持和参与——车头不拉，车厢白挂。"},{"id":2,"type":"概念","tag":"六西格玛与零缺陷","ch":"C1","stem":"关于六西格玛管理和零缺陷管理之间的关系，正确的是：","options":[{"k":"A","t":"零缺陷是比六西格玛质量目标要求更高的管理模式"},{"k":"B","t":"零缺陷不容忍缺陷，但是六西格玛容忍百万分之3.4的缺陷"},{"k":"C","t":"六西格玛管理所追求的目标也是零缺陷"},{"k":"D","t":"以上说法都不对"}],"answer":["C"],"note":"三个错项各有陷阱。A 混淆了\"理念\"与\"方法体系\"——零缺陷（克劳斯比）是质量哲学与文化，六西格玛是含 DMAIC/DFSS 工具的实施体系，二者不在同一维度比高低。B 是最常见的误选：3.4 DPMO 不是\"容许的缺陷\"，而是 6σ 水平在考虑**1.5σ 长期漂移**后（等效 4.5σ 单侧）算出的**预期表现值**；六西格玛的方向是持续改进、趋于完美。记忆式：6σ − 1.5σ = 4.5σ → 单侧 3.4 PPM。","analysis":"六西格玛管理追求的目标本质上也是零缺陷；\"3.4 DPMO\"是 1.5σ 偏移下的长期能力水平，不等于\"容忍缺陷\"。A/B 的说法把两者对立、误解了六西格玛，都不对。","traps":["把 3.4DPMO 理解为\"六西格玛容忍缺陷\"","把零缺陷与六西格玛对立（A/B 说法）"],"memory":"6σ 追求的本质也是零缺陷；3.4DPMO=1.5σ漂移下4.5σ单侧的预期值。"},{"id":3,"type":"概念","tag":"精益思想","ch":"C5","stem":"精益生产追求\"流动\"\"拉动\"和\"均衡\"，其中对\"流动\"的正确理解是：","options":[{"k":"A","t":"产品尽可能处于被增值加工的状态中"},{"k":"B","t":"产品尽可能采取流水线作业"},{"k":"C","t":"物料流动尽可能排成直线，因为直线的距离最短"},{"k":"D","t":"每个加工环节都采用FIFO先进先出的操作"}],"answer":["A"],"note":"注意\"流动\"的本质是**价值不间断地流动、消除停滞与等待**，B/C/D（流水线、直线布局、FIFO）都只是实现流动的**手段之一**，题目问的是\"正确理解\"，必须选本质。量化指标即**流程周期效率 PCE = 增值时间 / 总生产周期**，A 正是它的文字表述。精益五原则口诀：价值—价值流—流动—拉动—尽善尽美。","analysis":"精益的\"流动\"指产品尽可能处于**被增值加工的状态**，缩短等待、搬运等非增值时间。B（流水线）、C（直线最短）、D（FIFO）都是对\"流动\"的机械理解，不是精益思想的本意。","traps":["把流水线、直线布局、FIFO 等\"手段\"当成\"流动\"的本质"],"memory":"流动=价值不间断、增值不停步；精益五原则：价值—价值流—流动—拉动—尽善尽美。"},{"id":4,"type":"概念","tag":"精益思想","ch":"C5","stem":"关于精益生产的描述，不正确的是：","options":[{"k":"A","t":"只适用于离散制造业，对连续流程生产不适用"},{"k":"B","t":"精益生产的核心是消除浪费"},{"k":"C","t":"精益生产强调要善于发现浪费现象，暴露问题"},{"k":"D","t":"精益生产的本质是持续改进"}],"answer":["A"],"note":"精益源于丰田（离散装配）但已广泛用于流程行业、医疗、金融、研发，选项 A 的\"只适用于\"是绝对化表述——考试中含\"只、必须、一定、全部\"的选项优先怀疑。修正后 B（消除浪费是核心）、C（善于发现浪费、暴露问题是精益的推进方式）、D（本质是持续改进）均为正确表述，不构成\"不正确\"项。","analysis":"精益生产**不仅适用于离散制造业，也适用于连续流程**（如化工、钢铁等流程工业同样推行精益）。B/C/D 均为正确表述。","traps":["\"只适用于离散制造业\"是绝对化表述，恰是本题要选的\"不正确\"项"],"memory":"精益不限于制造业：核心是消除浪费，本质是持续改进。"},{"id":5,"type":"概念","tag":"质量管理大师","ch":"C1","stem":"下列陈述中，哪个是质量管理先驱休哈特博士的观点？","options":[{"k":"A","t":"取消工作定额，代之以领导职能强化"},{"k":"B","t":"单一的观测几乎不能构成客观决策的依据"},{"k":"C","t":"质量管理活动中重要的三个过程是：质量策划、质量控制和质量改进"},{"k":"D","t":"质量特征值偏离目标值导致质量损失"}],"answer":["B"],"note":"这是典型的\"大师观点对号入座\"题，B 体现休哈特的核心思想——**任何过程都存在变异，单点数据无法区分普通原因与特殊原因**，必须用成组数据和控制图判断。\n对照速记表：\n- 休哈特：变异、控制图、统计控制状态\n- 戴明：14 条（取消工作定额/口号/大规模检验）、PDCA、85/15 责任划分 → 本题 A\n- 朱兰：质量三部曲（策划-控制-改进）、质量螺旋、适用性、帕累托 → 本题 C\n- 田口：质量损失函数（偏离目标值即损失）、稳健设计 → 本题 D\n- 克劳斯比：零缺陷、质量免费、\"质量即符合要求\"\n- 费根堡姆：TQC、质量成本","analysis":"休哈特（统计过程控制之父）的核心观点：**单一的观测几乎不能构成客观决策的依据**，必须用统计方法分析数据。A 是戴明的观点（14 点），C 是朱兰的质量三部曲，D 是田口玄一的损失函数。","traps":["大师观点对号入座错位：A是戴明、C是朱兰、D是田口"],"memory":"休哈特=控制图之父：单一观测几乎不能构成客观决策依据。"},{"id":6,"type":"概念","tag":"六西格玛推进","ch":"C1","stem":"企业推行六西格玛一般可分为四个阶段，即导入期、加速期、成长期和成熟期。对于正准备导入六西格玛管理的企业来说，下面哪个建议是正确的？","options":[{"k":"A","t":"先进行黑带或绿带培训，然后再让他们做项目"},{"k":"B","t":"先进行高层管理培训，让高层统一理念"},{"k":"C","t":"先请咨询公司为企业做项目，验证六西格玛方法是否有效"},{"k":"D","t":"先进行黑带培训，然后让黑带培养绿带"}],"answer":["B"],"note":"导入期的标准动作顺序是**高层理念统一与承诺 → 建立推进组织 → 选拔黑带并培训 → 选择试点项目**。C 的错误尤其值得记住：把项目外包给咨询公司，等于放弃组织自身能力建设，六西格玛必须由**企业自己的骨干做项目**。四阶段特征速记：导入期（高层+试点）、加速期（大规模培训+项目铺开）、成长期（绿带普及+融入日常管理）、成熟期（文化+战略融合+DFSS/精益整合）。","analysis":"准备导入阶段，首要任务是**高层管理培训、统一理念**——\"领导先行\"原则，与题1呼应。先培训黑带/绿带或先做项目都是顺序错误。","traps":["以为导入期应先培训黑带/绿带或先做试点项目"],"memory":"先头后兵：导入六西格玛第一步是高层管理培训、统一理念。"},{"id":7,"type":"概念","tag":"战略策划","ch":"C1","stem":"情景策划是一种用来____的方法。","options":[{"k":"A","t":"设想将来可能会遇到的一系列问题"},{"k":"B","t":"评价组织治理水平"},{"k":"C","t":"确定战略目标和指标"},{"k":"D","t":"配备和优化资源"}],"answer":["A"],"note":"情景策划（scenario planning）的用途是应对**未来的不确定性**——预设若干种可能的未来情景并准备对策，而不是设定指标（C 是目标展开/平衡计分卡的职能）或配置资源（D）。记忆点：情景策划回答\"如果……会怎样\"，不回答\"我们要达到多少\"。","analysis":"情景策划（Scenario Planning）用于**设想将来可能遇到的一系列问题/情景**，属于战略规划中面向未来的方法。","traps":["与\"确定战略目标(C)\"\"配备资源(D)\"混淆"],"memory":"情景策划答\"如果…会怎样\"——设想未来、应对不确定。"},{"id":8,"type":"概念","tag":"QFD","ch":"C4","stem":"某六西格玛小组使用质量功能展开（QFD）改进手机设计，质量屋上方的三角反映了工程措施之间的相关关系。在如何描述相关关系时，有不同的观点，下列观点哪个是正确的？","options":[{"k":"A","t":"只要根据工程经验描述出工程措施之间的关系强弱即可"},{"k":"B","t":"不仅要描述出工程措施之间的强弱关系，还要指出可能是正相关或负相关"},{"k":"C","t":"屋顶上的三角形所反映的关系并不是顾客需求和工程措施之间的关系，因此不重要"},{"k":"D","t":"没有必要考虑工程措施之间的关系"}],"answer":["B"],"note":"屋顶（技术相关矩阵）必须同时标出**方向（正/负）和强度**，价值恰恰在**负相关**上——它暴露技术特性之间的设计矛盾（如手机\"电池续航长\"与\"机身轻薄\"），需要权衡取舍或用 TRIZ/创新方案破解。质量屋六大块速记：左墙 WHATs（顾客需求+权重）、天花板 HOWs（技术特性）、房间（关系矩阵）、屋顶（HOWs 相关性）、右墙（竞争对比）、地下室（目标值与重要度）。","analysis":"质量屋屋顶（三角矩阵）反映**工程措施之间的相关关系**，不仅要描述强弱，还要指出**正相关或负相关**（正相关表示措施互相促进，负相关表示存在冲突需要权衡）。","traps":["屋顶只标强弱、不标正相关/负相关"],"memory":"质量屋屋顶：强弱+正负都要标，负相关暴露设计冲突。"},{"id":9,"type":"概念","tag":"顾客满意","ch":"C4","stem":"某企业六西格玛小组为了获取顾客对企业提供的服务的反馈信息，建立了呼叫中心并收集顾客投诉信息。1—5月份该企业服务的顾客为6000人，而顾客投诉只有6人。同时小组对此批顾客进行了分析，发现回头客只有1%，重复购买率很低。基于这一结果，正确的描述是：","options":[{"k":"A","t":"以上数据有矛盾，数据一定有问题"},{"k":"B","t":"投诉率为0.1%，说明满意度为99.9%"},{"k":"C","t":"顾客满意度与是否重复购买之间一定没有关系"},{"k":"D","t":"投诉率为0.1%，不代表满意度为99.9%"}],"answer":["D"],"note":"这题考\"**投诉冰山**\"。低投诉率≠高满意率，因为不满意顾客中绝大多数选择沉默并直接流失（TARP 经典研究：仅约 4% 会投诉，沉默者中大部分不再购买）。1% 回头客与 0.1% 投诉率并不矛盾（A 错），所以投诉数据只能作为**被动的滞后指标**，必须配合主动调查（满意度调查、访谈、流失顾客回访）。C 的\"一定没有关系\"同样是绝对化表述，直接排除。VOC 收集要区分**被动数据（投诉、退货、保修）与主动数据（调查、访谈、观察）**。","analysis":"投诉率低**不等于**满意率高——不投诉的顾客可能只是懒得投诉（\"沉默的大多数\"）。回头客仅 1% 恰好说明顾客满意度并不高。这正是\"顾客之声\"分析中要警惕的陷阱。","traps":["由投诉率低推出满意率高（B/D辨析）","以为低投诉与低回头客\"矛盾\""],"memory":"沉默的顾客直接流失：投诉率0.1%不代表满意度99.9%。"},{"id":10,"type":"概念","tag":"KANO模型","ch":"C4","stem":"某笔记本生产企业在改进笔记本设计时对现有顾客和潜在顾客进行调查，得到了大量顾客需求信息，他们准备使用KANO模型对顾客需求进行分类，下述哪一个需求可以看做是最典型的一元需求？","options":[{"k":"A","t":"安全，不出现电池爆炸或自燃现象"},{"k":"B","t":"系统运行稳定，在运行中很少出现死机或蓝屏现象"},{"k":"C","t":"电池工作时间长"},{"k":"D","t":"具有触摸屏功能"}],"answer":["C"],"note":"一元（期望/性能）需求的判别标准是**满意度随实现程度近似线性上升**——续航从 4 小时到 10 小时，满意度持续提高，正是典型。A\"不爆炸/不自燃\"是安全底线，属**必备需求**（做到不加分，做不到极度不满）；B\"很少死机\"同样是理所当然的基本要求，偏必备；D 触摸屏在该题设定年代属**魅力需求**（有则惊喜，无则不抱怨）。三秒判别口诀：**有了不加分 = 必备；越多越满意 = 一元；有了惊喜 = 魅力**。另需记住 KANO 完整五类：必备 M、一元 O、魅力 A、无差异 I、反向 R。","analysis":"一元需求（线性需求）：满足程度越高、满意度越高。**电池工作时间长**符合（续航越长越满意）。A/B 属于**必备需求**（不满足会强烈不满，满足也不会提升满意度），D 触摸屏属于**兴奋需求**（没有也无所谓，有了会惊喜）。","traps":["把\"安全/稳定\"类必备需求误当一元需求","触摸屏（D）是魅力需求不是一元"],"memory":"越多越满意=一元；有了不加分=必备；有则惊喜=魅力。"},{"id":11,"type":"计算","tag":"DPMO","ch":"C6","stem":"一份订单上有5个重要信息需要准确无误地填写。在已填写的1000个订单中，发现有30个错误。请计算订单填写过程的DPMO是多少？","options":[{"k":"A","t":"6000"},{"k":"B","t":"30000"},{"k":"C","t":"60000"},{"k":"D","t":"80000"}],"answer":["A"],"note":"DPMO（Defects Per Million Opportunities，百万机会缺陷数）：机会数=1000×5=5000，缺陷数=30，DPMO=30/5000×10⁶=6000","analysis":"机会数 = 1000×5 = 5000，缺陷数 = 30，DPMO = 30/5000×10⁶ = **6000**。","traps":["把订单数当机会数（得30000即B项）"],"memory":"DPMO=缺陷数÷(单位数×机会数)×10⁶：30÷(1000×5)×10⁶=6000。"},{"id":12,"type":"概念","tag":"项目经济性","ch":"C3","stem":"一个针对某产品开展的六西格玛项目需要投入28000元改进费用和17000元培训费用（假设这些费用在项目开始时投入），项目的预期收益是5000元/月，且在项目开始后第6个月开始产生。预计该产品生产20个月后会退出市场，假设资金收益率（利率）为8%，若想分析该项目是否在经济上可行，可采用什么方法？","options":[{"k":"A","t":"价值分析法"},{"k":"B","t":"量-本-利分析法"},{"k":"C","t":"净现值法"},{"k":"D","t":"质量成本分析法"}],"answer":["C"],"note":"判据是题干里的两个信号——**跨期现金流 + 给了利率(资金时间价值)**，只有净现值法能处理折现。本题现金流：t=0 支出 45000（28000+17000），第 6～20 月各收益 5000（共 15 期），NPV>0 则可行。注意利率 8% 若为年利率须折成月利率 (i≈8%/12 或 (1.08)^{1/12}−1)。干扰项定位：价值分析 V=F/C（功能/成本）、量-本-利用于盈亏平衡点、质量成本分析用于识别改进机会与 COPQ，均不含时间价值。","analysis":"涉及**不同时点**的投入（期初 28000+17000）与收益（第 6 个月起每月 5000，共 15 个月），需把未来现金流折算到现值比较，应用**净现值法（NPV）**。","traps":["忽略\"跨期现金流+利率\"两个信号，误选量本利/价值分析"],"memory":"给利率、跨期收益就折现——净现值法NPV。"},{"id":13,"type":"计算","tag":"直通率RTY","ch":"C6","stem":"某生产线有两道工序，如下图所示，每道工序后有检验工序（用菱形表示），两道工序本身的初检合格率分别为90%和92%，A和B为返修工序。根据历史数据，进入返修的产品有50%能够修好，50%需要报废，假设检验能够检出所有不合格产品，以下说法正确的是：","options":[{"k":"A","t":"整条生产线的直通率为91.2%"},{"k":"B","t":"整条生产线的直通率为82.8%"},{"k":"C","t":"整条生产线的直通率为87.4%"},{"k":"D","t":"整条生产线的直通率为88%"}],"answer":["B"],"note":"RTY=0.90×0.92=0.828=82.8%，返修数据是干扰信息","analysis":"RTY = 0.90 × 0.92 = 0.828 = **82.8%**。返修数据是干扰信息——直通率只统计\"一次做对\"的产品，返修后合格的不算数。","traps":["把返修后合格的产品计入直通率"],"memory":"RTY=各工序一次合格率连乘：0.90×0.92=82.8%，返修是干扰信息。"},{"id":14,"type":"计算","tag":"DPU/FTY/PFY","ch":"C6","stem":"某个产品有2个关键特性，经过检验在500个产品中35个产品出现了40个缺陷，其中有20个产品经过返工消除了缺陷。则该过程观察到的DPU是____，直通率（FTY）是____，最终合格率（PFY）是____。","options":[{"k":"A","t":"92%、93%、97%"},{"k":"B","t":"0.08、92%、97%"},{"k":"C","t":"0.08、93%、97%"},{"k":"D","t":"8%、92%、97%"}],"answer":["C"],"note":"DPU=40/500=0.08；观察FTY=(500−35)/500=93%；PFY=(500−35+20)/500=97%，故选C。","analysis":"- DPU（Defects Per Unit，单位缺陷数）= 40/500 = **0.08**\n- FTY = (500−35)/500 = **93%**（35 个出现缺陷的产品即未一次通过，\"观察到的\"直通率按频数计）\n- PFY = (500−35+20)/500 = **97%**（返工修好的 20 件计入最终合格）","traps":["把\"观察到的FTY\"当成泊松估计 e^(-DPU)=92.3%（B项）","选项A把DPU写成92%的陷阱"],"memory":"观察FTY=无缺陷品数/总数=465/500=93%；PFY才计入返修=97%。"},{"id":15,"type":"计算","tag":"项目选择矩阵","ch":"C3","stem":"下表表示某企业拟选的六西格玛项目及项目选择需要考虑的因素和权重（对质量的影响0.5、对周期的影响0.2、对成本的影响0.2、对管理水平的影响0.1），请选出项目优先顺序（从高到低）的正确排序。表格：项目1=◎△空△、项目2=空◎△○、项目3=○△△◎、项目4=△○○空（空格=该因素不计分；◎强相关9分、○较强相关3分、△弱相关1分）。","options":[{"k":"A","t":"项目1、项目3、项目4、项目2"},{"k":"B","t":"项目2、项目4、项目1、项目3"},{"k":"C","t":"项目1、项目3、项目2、项目4"},{"k":"D","t":"项目1、项目2、项目3、项目4"}],"answer":["C"],"note":"加权分（空格=0分）：项目1=9×0.5+1×0.2+0+1×0.1=4.8；项目2=0+9×0.2+1×0.2+3×0.1=2.3；项目3=3×0.5+1×0.2+1×0.2+9×0.1=2.8；项目4=1×0.5+3×0.2+3×0.2+0=1.7。","analysis":"加权分（◎=9，○=3，△=1，空格=0；权重 0.5/0.2/0.2/0.1）：\n- 项目1 = 9×0.5+1×0.2+0×0.2+1×0.1 = **4.8**\n- 项目2 = 0×0.5+9×0.2+1×0.2+3×0.1 = **2.3**\n- 项目3 = 3×0.5+1×0.2+1×0.2+9×0.1 = **2.8**\n- 项目4 = 1×0.5+3×0.2+3×0.2+0×0.1 = **1.7**\n\n排序：项目1 > 项目3 > 项目2 > 项目4（即 C）。⚠️ 易错：**空白格不是漏印，是不相关计 0 分**——按\"每行填满\"脑补符号就会算错；权重必须与对应列相乘。","traps":["把表格空白格当漏印、脑补符号","加权时忘记乘列权重"],"memory":"空格=0分；逐列乘权重（0.5/0.2/0.2/0.1）再排序。"},{"id":16,"type":"计算","tag":"网络计划","ch":"C5","stem":"下图是某项目计划的双代号网络图，箭线下的数据表示工序所需时间（天），M工序表示节点8～10之间的工序，基于该网络图，M工序的最早可能开始时间是____天后；最晚必须开始时间是____天后。网络图箭线：①→②=9、①→③=2、①→④=3、②→⑤=4、③→⑤=1、③→⑥=3、④→⑥=6、④→⑦=8、⑤→⑧=1、⑥→⑧=5、⑥→⑨=8、⑦→⑨=1、⑧→⑩=2(M)、⑨→⑩=2。","options":[{"k":"A","t":"14, 16"},{"k":"B","t":"4, 6"},{"k":"C","t":"14, 17"},{"k":"D","t":"10, 14"}],"answer":["C"],"note":"ES(②)=9，ES(③)=2，ES(④)=3；ES(⑤)=max(9+4, 2+1)=13；ES(⑥)=max(2+3, 3+6)=9；ES(⑧)=max(13+1, 9+5)=14；ES(⑦)=3+8=11；ES(⑨)=max(9+8, 11+1)=17；总工期=ES(⑩)=max(14+2, 17+2)=19；LS(M)=19−2=17。故 C（14，17）。","analysis":"- M 的最早开始 = 节点⑧最早时间 = max(①→②→⑤→⑧=14, ①→③→⑥→⑧=14) = **14 天**\n- 总工期 = 节点⑩最早时间 = max(14+2, 17+2) = **19 天**（关键路径 ①→④→⑥→⑨→⑩ = 3+6+8+2）\n- M 最晚必须开始 = 19 − 2 = **17 天**","traps":["总工期误取较短路径（16天那条）","最晚时间忘减工序历时"],"memory":"最早顺推取最大，最晚=总工期−历时：14、19−2=17。"},{"id":17,"type":"概念","tag":"变革管理","ch":"C2","stem":"六西格玛项目的实施过程是一个流程变革、系统变革和文化变革的过程。对于变革管理，以下哪项说法不正确？","options":[{"k":"A","t":"变革管理的根本目的是确保项目实施成功所必需的利益相关者的支持与承诺"},{"k":"B","t":"企业全体员工接受并适应新的系统与业务流程"},{"k":"C","t":"项目所涉及的人员，其积极主动的心愿并不能带来变革"},{"k":"D","t":"变革管理工作的核心是沟通"}],"answer":["C"],"note":"","analysis":"\"积极主动的心愿并不能带来变革\"表述错误——**员工积极主动正是变革成功的重要动力**。A/B/D 均为正确观点。","traps":["误认为\"员工积极主动不能带来变革\"的说法正确（C恰是错项）"],"memory":"变革管理核心是沟通，员工主动是变革的动力。"},{"id":18,"type":"概念","tag":"团队震荡期","ch":"C2","stem":"六西格玛项目进入震荡期时，一个突出的表现就是：成员对项目目标和工作方法产生分歧，如何处理分歧，以下做法错误的是：","options":[{"k":"A","t":"加强团队成员之间的沟通"},{"k":"B","t":"鼓励成员发表不同意见"},{"k":"C","t":"统一认识，不许发表与项目目标和工作方法不同的意见"},{"k":"D","t":"必要时请业务负责人或倡导人出面支持"}],"answer":["C"],"note":"","analysis":"震荡期处理分歧应**鼓励沟通和发表不同意见**，而不是\"统一认识、不许发表不同意见\"——压制分歧会掩盖问题。","traps":["把\"统一认识、不许发表不同意见\"当成正确做法"],"memory":"震荡期要疏导：多沟通、鼓励异见，压制分歧会掩盖问题。"},{"id":19,"type":"概念","tag":"甘特图","ch":"C5","stem":"甘特图是用来安排项目计划的重要工具，有关甘特图的优点，以下说法错误的是：","options":[{"k":"A","t":"简明、形象、直观"},{"k":"B","t":"可以方便地确定关键活动"},{"k":"C","t":"可以在任何时点上分析项目正在进行的活动和所需资源"},{"k":"D","t":"可以方便地检查项目进度"}],"answer":["B"],"note":"","analysis":"甘特图的优点是简明直观、可检查进度、可分析活动与资源，但**不能方便地确定关键活动**——那是网络计划技术（CPM/PERT）的功能。这是甘特图与网络图的经典区别。","traps":["以为甘特图能方便确定关键活动（那是网络计划的功能）"],"memory":"甘特图直观管进度；关键路线要靠网络图（CPM）。"},{"id":20,"type":"概念","tag":"新七种工具","ch":"C5","stem":"在项目改进阶段，团队成员就改进方案进行头脑风暴，提出了许多改进建议，项目组长需要将这些建议梳理，合并成几个方案，应该采用什么方法？","options":[{"k":"A","t":"亲和图"},{"k":"B","t":"过程决策程序图（PDPC）"},{"k":"C","t":"关联图"},{"k":"D","t":"力场分析"}],"answer":["A"],"note":"","analysis":"把头脑风暴产生的零散建议**梳理、合并成几个方案**，用**亲和图（KJ 法）**按主题归类。PDPC 用于过程决策，关联图用于理清复杂因果关系，力场分析用于分析推/阻力。","traps":["与PDPC、关联图、力场分析混淆"],"memory":"零散语言资料归类合并=亲和图（KJ法）。"},{"id":21,"type":"概念","tag":"质量成本","ch":"C1","stem":"在统计质量成本时，下面哪些成本不应计入外部故障成本？","options":[{"k":"A","t":"产品责任成本"},{"k":"B","t":"保修成本"},{"k":"C","t":"投诉处理费用"},{"k":"D","t":"因质量达不到等级导致降级损失费用"}],"answer":["D"],"note":"分类分界线是\"产品交付/出厂\"这一刻。降级（降等）是出厂前发现质量达不到等级而降级销售 → 内部故障成本。\n易混陷阱：如果产品**已交付顾客后**才协商降价处理，那叫\"折让/让价（price concession）\"，属**外部**故障成本。考题常用\"降级\"与\"折让\"两词互换来设坑，看清是出厂前还是出厂后。\n降级损失发生在企业内部（内部故障成本），外部故障成本包括退货、保修、责任、投诉处理等","analysis":"**考点**：质量成本四分法（预防、鉴定、内部故障、外部故障）。\n- 外部故障成本 = 产品交付顾客后发生的损失：退货、保修、**产品责任**、**投诉处理**等。\n- D\"降级损失\"发生在企业内部（产品未出厂就降级销售），属于**内部故障成本**，故不应计入外部故障。","traps":["把出厂前的降级损失计入外部故障成本"],"memory":"出厂前内部（返工/报废/降级），出厂后外部（退货/保修/责任/投诉）；降级内、折让外。"},{"id":22,"type":"计算","tag":"PERT三点估计","ch":"C5","stem":"某项目团队在制定项目计划时需要对项目中的各项活动进行时间估计，由于缺乏历史资料，对A活动所需时间进行了三个估计：最乐观时间：2天，最可能时间：5天，最悲观时间：11天。那么完成A活动的期望时间是：","options":[{"k":"A","t":"6天"},{"k":"B","t":"5.5天"},{"k":"C","t":"5天"},{"k":"D","t":"6.5天"}],"answer":["B"],"note":"PERT 用 β 分布近似，一并记住配套的第二个公式：σ=(b−a)/6=(11−2)/6=1.5，σ²=2.25。考\"该活动 7 天内完成的概率\"时用 Z=(7−5.5)/1.5=1.0→84.13%；求整条路径时是各活动**方差相加**再开方，不是标准差相加。\n(2+4×5+11)/6=33/6=5.5","analysis":"**考点**：期望时间 E = (O + 4M + P)/6。\n- (2 + 4×5 + 11)/6 = 33/6 = **5.5 天**。","traps":["权重漏乘\"最可能时间\"的4倍","方差与标准差公式混用"],"memory":"E=(O+4M+P)/6=(2+20+11)/6=5.5天；σ=(P−O)/6=1.5。"},{"id":23,"type":"概念","tag":"团队构成","ch":"C2","stem":"在某六西格玛项目立项之初，确定了该项目要将某产品的直通率（FTY）提高，以便缩短生产周期和降低成本。通过初步数据分析，团队发现供应商提供的塑料件外观缺陷占总缺陷的80%，而且设计部门、生产部门和质量检验部门对外观检验的程序和标准不太统一，在构建项目团队时，最佳的团队构成是：","options":[{"k":"A","t":"质量检验部门、生产部门和设计部门以及供应商组成的跨职能团队"},{"k":"B","t":"这是一个与生产部门密切相关的项目，团队成员应全部来自生产部门"},{"k":"C","t":"这是一个与质量检验部门密切相关的项目，团队成员应全部来自质量检验部门"},{"k":"D","t":"质量检验部门、生产部门和设计部门组成的跨职能团队"}],"answer":["A"],"note":"两个信号各指向一类成员——\"供应商件占 80%\"要供应商，\"三部门标准不统一\"要三部门，两者都要即 A。判据是\"谁拥有过程/谁能改变 X\"，不是\"谁最相关\"。\n供应商是问题源头，必须纳入团队","analysis":"**考点**：六西格玛团队构成要覆盖问题相关方。\n- 缺陷源头是**供应商**提供的塑料件，且设计/生产/检验三部门检验标准不统一——四者缺一不可，故选 A（含供应商）。","traps":["漏掉供应商（缺陷源）或组成单部门团队"],"memory":"问题根源涉及谁，谁就进团队——跨职能含供应商。"},{"id":24,"type":"概念","tag":"水平对比","ch":"C3","stem":"在使用水平对比（benchmarking）时，有关选择对比对象的表述，以下错误的是：","options":[{"k":"A","t":"对比对象可以是竞争性行业或非竞争性行业中职能活动的最佳实践者"},{"k":"B","t":"对比对象可以是非竞争性行业中职能活动相似的最佳实践者"},{"k":"C","t":"对比对象只能是竞争性行业中职能活动的最佳实践者"},{"k":"D","t":"对比对象不能选择竞争性行业中的一般企业"}],"answer":["C"],"note":"D 的表述其实不够严谨（竞争性对比中拿一般竞争对手做参照并非绝不可行），但单选取\"最错\"，C 的绝对化排他表述优先。选项里出现\"只能/必须/一定/越多越好\"，先怀疑。\n配套记忆：水平对比四类——内部、竞争性、职能、通用（流程）；后两类恰恰允许跨行业，正是 C 错的原因。","analysis":"**考点**：水平对比对象的选择。\n- 对比对象**可以**是竞争性或非竞争性行业中的最佳实践者（A/B 对），**不能**选竞争性行业中的一般企业（D 对）。\n- C 说\"只能是竞争性行业\"——以偏概全，**错误**。","traps":["\"只能竞争性行业\"的绝对化表述误当正确"],"memory":"标杆四类：内部/竞争/职能/通用——后两类允许跨行业。"},{"id":25,"type":"概念","tag":"问题陈述","ch":"C3","stem":"下列哪些属于\"好\"的问题陈述？\na. 2009年上半年，顾客反馈某产品密封不良，导致退货12批次，损失高达100万元\nb. 人力资源部提出，新聘大学生工作不安分，常常在半年内就跳槽\nc. 技术部开会讨论后决定X生产线从45周开始启用新夹具，预计收益50万元\nd. 印刷工站现有产能50K/天，无法满足5—8月份65K/天的交货需求，2—8月份延期交货15次，赔偿延期交货款50万元","options":[{"k":"A","t":"a，c，d"},{"k":"B","t":"a，b，d"},{"k":"C","t":"a，d"},{"k":"D","t":"以上都不对"}],"answer":["C"],"note":"好的问题陈述含 What/When/Where/How much，**不含 Why（原因）、Who（责任人）、How（对策）**。b 犯\"无量化＋指责人（工作不安分）\"，c 犯\"直接给对策＋预设收益\"——c 是典型的\"这是项目章程的目标/对策，不是问题陈述\"。","analysis":"**考点**：好问题陈述应基于事实、量化、可测量（5W2H 式：时间、对象、现状、影响、损失）。\n- a：有数量（12批次、100万元）✅；d：有产能数字、延期次数、赔偿金额 ✅。\n- b：主观描述（\"不安分\"\"常常\"），无数值 ✗；c：是**解决方案**（启用新夹具）而非问题 ✗。","traps":["c提前给出对策、b无数据且指责人"],"memory":"好的问题陈述=量化的事实，不含原因、对策、责任。"},{"id":26,"type":"概念","tag":"网络计划","ch":"C5","stem":"在绘制双代号网络图时，需要引入虚工序（dummy activity），关于虚工序的描述，正确的是：","options":[{"k":"A","t":"虚工序既不消耗时间，也不消耗资源"},{"k":"B","t":"虚工序不消耗时间，但可能消耗资源"},{"k":"C","t":"绘制网络图时虚工序越多越好"},{"k":"D","t":"虚工序肯定不会出现在关键路线上"}],"answer":["A"],"note":"D 是最容易误选的干扰项——虚工序历时为 0，但完全可以落在关键路线上（它传递逻辑约束，长度为 0 不影响其属于最长路径）。虚工序只有两个用途：表达平行作业的区分、表达单向逻辑依赖；且应尽量少（C 错）。","analysis":"**考点**：双代号网络图中虚工序性质。\n- 虚工序**既不消耗时间也不消耗资源**，仅表示逻辑关系（A 对）；B 错。C\"越多越好\"错——应尽量少。D 错——虚工序**可以**出现在关键路线上（当关键路线包含虚工序时）。","traps":["以为虚工序不会出现在关键路线","以为虚工序消耗资源"],"memory":"虚工序零时间零资源，只传逻辑，可落在关键路线。"},{"id":27,"type":"概念","tag":"SIPOC","ch":"C4","stem":"六西格玛项目小组在界定阶段绘制SIPOC图时，项目团队成员在如何绘制过程图（P）时意见产生分歧，以下意见正确的是：","options":[{"k":"A","t":"过程图应绘制得越细越好"},{"k":"B","t":"过程图只要粗略地表示出主要的流程即可"},{"k":"C","t":"过程图至少要表示出流程所涉及的人员的动作"},{"k":"D","t":"过程图至少要表示出价值流"}],"answer":["B"],"note":"SIPOC 的 P 是宏观流程，业界惯例 **5±2 步（4～7 步）**，一页纸能看完。细化流程图、价值流图（D，精益工具）、动作层面分析（C）分别属于测量/分析阶段。记法：界定阶段画\"地图\"，分析阶段才画\"街景\"。","analysis":"**考点**：SIPOC 中的 P 是高层次的宏观流程图（macro-level）。\n- SIPOC 只要求**粗略表示主要流程**（5~7 个步骤即可），无需细到人员动作（C 错）或价值流（D 错，价值流图是另一工具）。","traps":["把SIPOC的P画得过细或画成价值流"],"memory":"SIPOC的P=宏观流程5±2步，细节属于后续阶段。"},{"id":28,"type":"概念","tag":"问题陈述","ch":"C3","stem":"在立项表（项目授权书）中进行问题陈述，最恰当的是：","options":[{"k":"A","t":"公司产品装船时间比竞争对手平均长10天，应消除产品装船前的文件制作延误问题"},{"k":"B","t":"为了缩短停机时间，设备管理部门有必要改善业务顺序"},{"k":"C","t":"公司××产品1-6月份不合格率为7%，其主要缺陷为毛刺、异物、边裂，各占3%，2.5%，1.5%，重修和报废达120万元"},{"k":"D","t":"最近调查中发现35%以上的顾客对我们的产品和服务提出或多或少的不满"}],"answer":["C"],"note":"A 混入对策与原因指认（\"应消除文件制作延误\"），B 无数据＋含对策，D 只有\"35% 顾客或多或少不满\"，缺缺陷定义与财务影响，不可测量。C 同时具备时间窗、指标水平、缺陷分层（毛刺/异物/边裂）、财务影响，还天然给出了后续分层方向。","analysis":"**考点**：项目授权书中的问题陈述须量化、具体。\n- C 有时间（1-6月）、数据（不合格率 7%）、缺陷分布（毛刺3%、异物2.5%、边裂1.5%）、财务影响（120万），最规范。\n- A 混入了解决方案（\"消除文件制作延误\"）；B 是改善建议；D 只有模糊百分比无具体数据。","traps":["误选含对策(A)、建议(B)、模糊不满(D)的陈述"],"memory":"立项书问题陈述三要素：时间范围+量化数据+财务损失。"},{"id":29,"type":"概念","tag":"CTQ","ch":"C4","stem":"选择项目的CTQ（critical to quality）是一项重要的工作，关于如何选择CTQ，下列描述不正确的是：","options":[{"k":"A","t":"CTQ一定是计量值数据"},{"k":"B","t":"CTQ一定与顾客需求或企业关键业务指标相关"},{"k":"C","t":"当CTQ本身不可测或很难测量时，可以采用代用测量指标"},{"k":"D","t":"当CTQ数量较多时，可以采用排列图或质量成本分析确定最重要的CTQ"}],"answer":["A"],"note":"CTQ 可以是计数值（不合格品率、DPMO、退货批次）。正确说法是\"**优先**选计量值\"（信息量大、样本量小、能算 Cp/Cpk），而非\"一定是\"。C 提到的代用指标要注意：代用 Y 必须与真实 CTQ 有已验证的相关性，否则改善了代用指标而顾客无感。","analysis":"**考点**：CTQ 的定义与选择原则。\n- CTQ **不一定**是计量值数据——属性数据（如合格/不合格、缺陷数）同样可以是 CTQ，故 A 错误。\n- B（与顾客需求/关键业务相关）、C（代用指标）、D（排列图/质量成本筛选）均正确。","traps":["以为CTQ一定是计量值数据"],"memory":"CTQ的C是Critical不是Continuous：计数型同样可以做CTQ。"},{"id":30,"type":"计算","tag":"西格玛水平","ch":"C6","stem":"Z_bench是用来衡量过程水平的一个重要指标，若已知某过程的Z_bench=2.5，则该过程的西格玛水平（sigma level）是：","options":[{"k":"A","t":"2.5"},{"k":"B","t":"1.5"},{"k":"C","t":"6"},{"k":"D","t":"4"}],"answer":["D"],"note":"西格玛水平=Z_bench+1.5=4","analysis":"**考点**：σ水平 = Z_bench + 1.5（长期漂移）。\n- 2.5 + 1.5 = **4**（短期能力对应的σ水平）。","traps":["直接把Z_bench当西格玛水平"],"memory":"σ水平=Z_bench+1.5：2.5+1.5=4。"},{"id":31,"type":"计算","tag":"概率","ch":"C6","stem":"某工人生产了10件产品，其中3件是缺陷产品（缺陷产品需要专门的仪器才能检测出来），由于工作疏忽，7件好品和3件坏品混在一起。现技术中心需要从10件中随机抽取2件产品进行检测，问抽到至少一件坏品的概率有多大？","options":[{"k":"A","t":"49/100"},{"k":"B","t":"8/15"},{"k":"C","t":"7/15"},{"k":"D","t":"3/10"}],"answer":["B"],"note":"1-C(7,2)/C(10,2)=1-21/45=24/45=8/15","analysis":"**考点**：超几何/组合计数，\"至少一件\"用对立事件。\n- P(至少1件坏) = 1 − P(全好) = 1 − C(7,2)/C(10,2) = 1 − 21/45 = 24/45 = **8/15**。","traps":["直接算\"抽到坏品\"不取对立事件"],"memory":"至少一件=1−全是好品=1−C(7,2)/C(10,2)=8/15。"},{"id":32,"type":"概念","tag":"MSA属性一致性","ch":"C7","stem":"在对某一液晶屏面板生产线的质量项目中，需要加电后目测液晶屏是否有坏点，由于检测工人的技术水平、认真程度等有差异，经常出现检测结果不一致的现象。若对该检测过程的一致性进行分析，需要用到下列哪一种工具进行研究：","options":[{"k":"A","t":"Kappa分析"},{"k":"B","t":"缺陷控制图"},{"k":"C","t":"GRR分析"},{"k":"D","t":"可靠性分析"}],"answer":["A"],"note":"","analysis":"**考点**：计数型（属性）测量系统分析工具。\n- 目测坏点=属性判定，多检验员一致性用 **Kappa 分析**（Kappa 一致性系数，衡量判定者之间一致程度的统计量；含检验员间、与标准间的一致性）。\n- GRR 是计量型测量系统分析；缺陷控制图是过程监控；可靠性分析是寿命研究。","traps":["把计数型一致性分析误配GRR（那是计量型）"],"memory":"目测判定一致性→Kappa；计量重复再现→GRR。"},{"id":33,"type":"概念","tag":"因果图因果矩阵","ch":"C5","stem":"有关因果图和因果矩阵的使用，下列说法错误的是：","options":[{"k":"A","t":"因果图一般只分析影响一个结果（Y）的多个可能原因"},{"k":"B","t":"因果矩阵一般只分析影响一个结果（Y）的多个可能原因"},{"k":"C","t":"因果矩阵可以帮助方便地确定关键的影响因素"},{"k":"D","t":"对于同一个问题，可以先绘制因果图，再绘制因果矩阵"}],"answer":["B"],"note":"因果矩阵是\"多个Y×多个X\"的加权排序工具，B 说它\"一般只分析影响一个结果（Y）\"与工具本质不符，故为错误说法——按题目选项官方答案 B 逻辑自洽。","analysis":"**考点**：两工具定位。\n- 因果图：1 个 Y 对多 X，层级化梳理原因逻辑（A 对；D\"先因果图后因果矩阵\"是常规顺序，对）。\n- 因果矩阵：**多 Y**（按重要度加权）对多 X 打分排序，用于筛选关键 X（C 对；B 说\"只分析一个结果\"错）。","traps":["以为因果矩阵只分析一个Y（它是多Y加权排序）"],"memory":"因果图想全一个Y，因果矩阵排序多Y，DOE定论。"},{"id":34,"type":"概念","tag":"跨职能流程图","ch":"C5","stem":"在进行流程改进时，经常要绘制跨职能流程图，有关跨职能流程图的说法，下面错误的是：","options":[{"k":"A","t":"跨职能流程图的优点是能够清晰地分析流程在各职能部门的流动情况"},{"k":"B","t":"绘制跨职能流程图时，职能部门可以水平摆放，也可以垂直摆放"},{"k":"C","t":"跨职能流程图不能分析流程中的活动是否是增值活动"},{"k":"D","t":"跨职能流程图上也可以标注活动所需时间"}],"answer":["C"],"note":"","analysis":"**考点**：跨职能流程图（泳道图）能力边界。\n- 泳道图按职能/部门分行列，能看清流程在各职能的流动（A 对）、可水平或垂直摆放（B 对）、可标注时间（D 对）。\n- **C 错**：泳道图**能**分析活动是否增值（增值/非增值分析不依赖泳道，但流程图上可以判断）。","traps":["\"不能分析增值活动\"的绝对化说法误当正确"],"memory":"泳道图：看得部门流动、可横可竖、能标时间、也能辨增值。"},{"id":35,"type":"概念","tag":"描述统计","ch":"C6","stem":"近几年来居民之间年收入的差距越来越大。为了解A市B区居民年收入状况，在公安部门户口册的记录中随机抽取了1.2万户居民，记录了他们在2008年的居民年收入数据。下列哪个统计量用于描述该区居民之间年收入的差距状况，且受异常值影响最小？","options":[{"k":"A","t":"样本中位数"},{"k":"B","t":"样本极差"},{"k":"C","t":"样本四分位间距"},{"k":"D","t":"样本标准差"}],"answer":["C"],"note":"描述\"差距（散布）\"且稳健——四分位间距IQR（中位数只描述位置，IQR描述散布且抗异常值）","analysis":"**考点**：散布程度 + 抗异常值（稳健性）。\n- 要描述\"差距（散布）\"且\"受异常值影响最小\"：**四分位间距 IQR** = Q3−Q1（基于位置排序，抗异常值）。\n- 中位数只描述位置不描述散布；极差受异常值影响极大；标准差受异常值影响大。","traps":["选中位数——它只描述位置不描述散布"],"memory":"散布+抗异常值=四分位间距IQR。"},{"id":36,"type":"概念","tag":"分布变换","ch":"C6","stem":"某企业在下料过程中需要从一块钢板上裁出一些边长为X的正方形料块，已知X服从正态分布。工程师关注的关键质量特性是正方形料块的面积X²，他想了解料块面积的分布，有关料块面积应服从的分布，下列说法正确的是：","options":[{"k":"A","t":"料块面积一定不再是正态分布"},{"k":"B","t":"料块面积仍是正态分布"},{"k":"C","t":"料块面积通常会是双峰分布"},{"k":"D","t":"料块面积一定是指数分布"}],"answer":["A"],"note":"正态变量的平方不服从正态分布（服从卡方型分布族）","analysis":"**考点**：正态随机变量经非线性变换不再正态。\n- X~N(μ,σ)，则 X² 服从**非中心卡方**型分布（退化为卡方分布当 μ=0 时），不再是正态。","traps":["以为正态变量的平方仍是正态分布"],"memory":"线性变换保正态，非线性（平方）破坏正态——X²属卡方族。"},{"id":37,"type":"概念","tag":"缺陷分布","ch":"C6","stem":"某PCB板生产企业在检测工序检测了1000块PCB板，在其中的5块PCB板中发现了50条缺陷，其余各块PCB板中均未发现任何缺陷。基于这一观察，请判断缺陷在PCB板上的分布情况。","options":[{"k":"A","t":"服从正态分布"},{"k":"B","t":"服从泊松分布"},{"k":"C","t":"不管服从何种分布，但缺陷肯定仍是随机出现的"},{"k":"D","t":"根本不能谈论缺陷的分布，因为缺陷是非随机出现的"}],"answer":["D"],"note":"缺陷高度集中在5块板上（非随机聚集），不能按泊松等随机模型讨论","analysis":"**考点**：缺陷是否随机分布决定能否用随机模型。\n- 50 个缺陷集中在 5 块板、其余 995 块全无缺陷 → 高度聚集、**非随机**，不能套泊松等随机模型，D 正确。","traps":["见计数数据就选泊松，忽略\"聚集=非随机\""],"memory":"先验证随机性再谈分布：缺陷集中在5块板上不能用泊松。"},{"id":38,"type":"计算","tag":"分布合成","ch":"C6","stem":"某机械企业在下料时需要把长度为L的钢料，截成长度为L1和L2的两段，已知L服从均值为10cm、标准差为0.4cm的正态分布，L1服从均值为5cm、标准差为0.3cm的正态分布，则关于L2的分布，下列说法正确的是：","options":[{"k":"A","t":"一定不是正态分布"},{"k":"B","t":"服从均值为5cm、标准差为0.1cm的正态分布"},{"k":"C","t":"服从均值为5cm、标准差为0.5cm的正态分布"},{"k":"D","t":"服从均值为5cm、标准差为0.7cm的正态分布"}],"answer":["C"],"note":"L2=L-L1，正态差仍正态；均值=10-5=5，方差=0.4²+0.3²=0.25，标准差=0.5","analysis":"**考点**：正态变量之差仍正态，方差相加。\n- L2 = L − L1；E = 10 − 5 = **5**；Var = 0.4² + 0.3² = 0.16 + 0.09 = **0.25** → σ = **0.5**。","traps":["两标准差直接相减（0.4−0.3=0.1，B项）"],"memory":"独立正态相减：均值相减、方差相加，σ=√(0.16+0.09)=0.5。"},{"id":39,"type":"概念","tag":"测量尺度","ch":"C6","stem":"黑带在改进某一业务流程中确定了以下测量项，请问哪个测量指标是定序测量尺度的指标？","options":[{"k":"A","t":"准时交付率"},{"k":"B","t":"人工成本"},{"k":"C","t":"人员技能等级"},{"k":"D","t":"客户抱怨数量"}],"answer":["C"],"note":"","analysis":"**考点**：定类/定序/定距/定比四尺度。\n- **定序**（Ordinal）：大小有序但差无意义——\"技能等级\"（初级/中级/高级）✅。\n- 准时交付率、客户抱怨数量、人工成本均为**定比**（有绝对零点、可比值）。","traps":["把比率类指标误当定序尺度"],"memory":"等级有序无等距=定序；有绝对零点可比值=定比。"},{"id":40,"type":"概念","tag":"MSA属性数据","ch":"C7","stem":"对某属性数据的测量系统进行一致性分析时，要选取30件产品。请问正确选择产品的方法应该是：","options":[{"k":"A","t":"依据实际生产的不良率比例选择合格或不合格的样品"},{"k":"B","t":"至少10件合格，至少10件不合格，这与实际生产状态无关"},{"k":"C","t":"可以随意设定比率，因为此比率与测量系统是否合格是无关的"},{"k":"D","t":"以上都不对"}],"answer":["B"],"note":"","analysis":"**考点**：属性一致性分析（Kappa）的取样规则。\n- 选 30 件样品：**至少 10 件合格、至少 10 件不合格**（保证两类判定都有足够样本），与生产不良率无关。","traps":["按实际不良率比例抽样（不良率低时抽不到不合格品）"],"memory":"属性一致性取样：至少10合格+至少10不合格，与生产率无关。"},{"id":41,"type":"计算","tag":"正态分布应用","ch":"C6","stem":"中国成年男子平均身高为170厘米，标准差为6厘米，如果让绝大部分（99%）男乘客能够无障碍乘车，公共汽车门的高度至少应为______（假设中国男子身高呈正态分布，Z₀.₉₈=2.1，Z₀.₉₉=2.3，Z₀.₉₉₅=2.6）。","options":[{"k":"A","t":"182.6厘米"},{"k":"B","t":"183.8厘米"},{"k":"C","t":"186.6厘米"},{"k":"D","t":"以上都不对"}],"answer":["B"],"note":"170+2.3×6=183.8（与p684答案表B一致）","analysis":"- **考点**：正态分布百分位点的反向求值。要让 99% 男乘客无障碍，门高应保证 99% 的人身高低于门高，即 X = μ + Z₀.₉₉·σ。\n- **计算**：170 + 2.3×6 = 170 + 13.8 = **183.8**。","traps":["不用题给Z值表、误用双侧分位数"],"memory":"门高=μ+Z₀.₉₉σ=170+2.3×6=183.8（与官方答案B一致）。"},{"id":42,"type":"概念","tag":"过程控制","ch":"C8","stem":"下列说法正确的是：","options":[{"k":"A","t":"过程处于受控状态，则该过程生产出的产品一定能满足规格要求"},{"k":"B","t":"根据直方图能够判断过程是否处于受控状态"},{"k":"C","t":"直方图不能反映过程随时间的变化规律"},{"k":"D","t":"以上都不对"}],"answer":["C"],"note":"","analysis":"- **考点**：受控状态 ≠ 满足规格；直方图只看\"分布形态\"，**不反映时间顺序变化**。\n- **选项辨析**：A 错——受控只说明过程稳定（仅普通原因变异），仍可能偏离规格；B 错——判断受控要用**控制图**（随时间取样），直方图无时间轴；C 对。","traps":["以为受控=满足规格、直方图能判受控"],"memory":"受控看控制图（有时间轴），合格看规格；直方图无时间序。"},{"id":43,"type":"概念","tag":"过程能力","ch":"C8","stem":"某零件生产流程，客户给定了零件尺寸规格，请问该流程的标准差与西格玛水平之间的关系是：","options":[{"k":"A","t":"标准差越大时，西格玛水平越低，超出规格限的缺陷品越多"},{"k":"B","t":"标准差越大时，西格玛水平越低，超出规格限的缺陷品越少"},{"k":"C","t":"标准差越大时，西格玛水平越高，超出规格限的缺陷品越多"},{"k":"D","t":"标准差越大时，西格玛水平越高，超出规格限的缺陷品越少"}],"answer":["A"],"note":"","analysis":"- **考点**：σ 越大 → 分布越分散 → 超出规格限的比例越大；西格玛水平是\"规格界限离均值几个 σ\"的度量，σ 越大则同一规格下西格玛水平越低、缺陷越多。","traps":["σ大小与西格玛水平高低的方向弄反"],"memory":"σ越大越分散：西格玛水平越低、超差品越多。"},{"id":44,"type":"计算","tag":"测量系统R&R","ch":"C7","stem":"用测量工具对车床加工的若干根支撑轴之直径进行测量，测量结果存在波动，波动可看成是测量对象间的波动以及测量系统波动叠加而成。计算得到测量值的总波动的方差为10，量具重复性方差为3，再现性方差为4，基于上述数据，正确的结论是：","options":[{"k":"A","t":"测量系统能力很好"},{"k":"B","t":"测量系统能力尚可，处于临界状态"},{"k":"C","t":"测量系统能力不足，必须进行改进"},{"k":"D","t":"条件不足，难以判断"}],"answer":["C"],"note":"R&R²=3+4=7，R&R/TV=√7/√10≈83.7%>30%，严重不足","analysis":"- **计算**：重复性 σ²=3，再现性 σ²=4 → R&R²=7；总波动 TV²=10。R&R/TV = √7/√10 ≈ **83.7%**。\n- **判据**：<10% 很好；10%–30% 尚可/临界；**>30% 能力不足，必须改进**。83.7% 远超 30%，选 C。","traps":["用方差之比（7/10）代替标准差之比"],"memory":"R&R/TV=√7/√10≈83.7%>30%：能力不足必须改进。"},{"id":45,"type":"概念","tag":"GRR图判读","ch":"C7","stem":"对测量系统进行GRR研究并且得出了下面的Xbar-R图，从图中可得出下列哪个结论？（R控制图：UCL=0.013 72，R̄=0.004 2，LCL=0，受控；Xbar控制图：UCL=8.317 70，X̿=8.309 8，LCL=8.301 90，多点超出控制限）","options":[{"k":"A","t":"由于Xbar图失控了，所以测量系统不好"},{"k":"B","t":"B员工的重复性比其他两个员工都好"},{"k":"C","t":"R图上A、B、C三个员工的连线图趋势很不一样，所以再现性不好"},{"k":"D","t":"以上的描述都不对"}],"answer":["D"],"note":"GRR（Gauge Repeatability & Reproducibility，量具重复性与再现性）研究中Xbar图失控是正常且期望的（说明零件间变异大于测量变异，测量系统能区分零件差异），R图受控说明重复性一致","analysis":"- **核心逻辑（GRR 的 Xbar-R 图解读是经典易错点）**：\n- **R 图受控**（UCL=0.013 72）→ 三位测量员的重复性一致，**测量系统重复性没问题**；\n- **Xbar 图失控反而是\"好现象\"**——说明零件间变异显著大于测量变异，测量系统有能力区分零件差异。GRR 研究中 Xbar 图失控是**期望结果**。\n- A 错（把失控当坏事）；B 错（R 图受控说明重复性相当，无证据说 B 员工更好）；C 错（R 图是每个子组极差，与\"趋势不一样\"无关，且无法据此判断再现性——再现性看不同操作者均值差异）。故选 D。","traps":["把GRR研究中X̄图失控当成坏事"],"memory":"R图受控=重复性一致；X̄图失控=能区分零件（期望现象），选D。"},{"id":46,"type":"概念","tag":"测量波动","ch":"C7","stem":"测量产品的特性指标时，不同的产品读数会有差异，造成此差异的原因是：","options":[{"k":"A","t":"产品间真实的差异"},{"k":"B","t":"由所使用量具造成的测量系统误差"},{"k":"C","t":"测量人员水平不同"},{"k":"D","t":"产品间真实的差异与所使用量具造成的测量系统误差的综合影响"}],"answer":["D"],"note":"","analysis":"- 测量读数差异 = **产品真实差异 + 测量系统误差**的综合效应。A、B、C 都只说了单方面。","traps":["只答单一来源（产品/量具/人员）"],"memory":"读数差异=产品真实差异+测量系统误差的综合。"},{"id":47,"type":"概念","tag":"MSA术语","ch":"C7","stem":"对同一个测量对象重复进行测量，不同测量者进行测量时测量结果的差异一般被称为：","options":[{"k":"A","t":"测量系统的稳定性"},{"k":"B","t":"测量系统的重复性"},{"k":"C","t":"测量系统的再现性"},{"k":"D","t":"测量系统的线性"}],"answer":["C"],"note":"","analysis":"- **重复性（Repeatability）**：同一操作者、同一仪器、同一对象重复测量 → 量具本身的变异（EV）。\n- **再现性（Reproducibility）**：不同操作者测量同一对象 → 操作者间的变异（AV）。\n- 题述\"不同测量者\"→ **再现性**，选 C。稳定性=随时间漂移；线性=不同量程上偏倚一致。","traps":["重复性与再现性混淆"],"memory":"同一人重复=重复性(EV)；不同人=再现性(AV)。"},{"id":48,"type":"概念","tag":"MSA交互作用","ch":"C7","stem":"某工程师在对某检测仪器进行测量系统分析后发现，R&R%=50%，导致测量系统误差较大的原因是测量者和随机抽取的零件之间存在非常明显的交互效应，基于这一点，你认为他应该如何解决这一问题？","options":[{"k":"A","t":"重新随机抽取零件，再次进行测量系统分析，直到没有交互作用为止"},{"k":"B","t":"分析不同测量者的测量方法，找出原因，解决问题"},{"k":"C","t":"重新选择测量者，再次进行测量系统分析，直到没有交互作用为止"},{"k":"D","t":"以上说法都不对"}],"answer":["B"],"note":"","analysis":"- R&R%=50% 且原因是**操作者×零件交互作用显著**：交互作用源于不同操作者测量**方法/习惯**不同（对同一零件读数方式不同）。\n- 正确做法：**分析并统一测量方法/操作规程**，从根源解决，而不是反复重测（A/C 重抽零件、重选测量者都无法消除方法差异）。选 B。","traps":["靠重抽零件/重选测量者\"消除\"交互作用"],"memory":"交互源于操作方法差异：分析并统一测量方法才是根治（B）。"},{"id":49,"type":"概念","tag":"MSA线性偏倚","ch":"C7","stem":"某测量系统的线性偏倚研究报告如下（回归：常量=0.007 72、P=0.573；斜率=−0.004 310、P=0.429，R-Sq=4.0%；偏倚：总平均−0.002 777 8、P=0.429，参考值2/3/4处偏倚分别为0.001 000 0/−0.003 333 3/−0.006 000 0，P 均大于0.05），选出以下正确的描述：","options":[{"k":"A","t":"斜率较大，表明线性误差显著"},{"k":"B","t":"在4.0处的均值严重偏离，表明偏倚误差显著"},{"k":"C","t":"从点图可看出，测量系统的变异很大，可以肯定其精度不是很好"},{"k":"D","t":"没有太大的问题，测量系统的线性和偏倚都很好"}],"answer":["D"],"note":"","analysis":"- **判读要点**：斜率 −0.004 31 且 P=0.429 不显著 → **线性没问题**；各参考值偏倚的 P 值均不显著 → **偏倚不显著**。","traps":["把常量当斜率、P值张冠李戴","把P>0.05误读成显著"],"memory":"斜率与各偏倚的P均>0.05：线性和偏倚都没问题，选D。"},{"id":50,"type":"概念","tag":"正态性检验","ch":"C6","stem":"在进行正态性检验时，得到如下图所示概率图（概率图弯曲并且呈起伏状，AD=5.092，P值<0.005），以下说法正确的是：","options":[{"k":"A","t":"概率图上标题下有\"正态\"字样，说明该数据是正态的"},{"k":"B","t":"从概率图上看，概率图弯曲并且呈起伏状，说明该数据是非正态的"},{"k":"C","t":"因AD值足够小，则数据是正态的"},{"k":"D","t":"P值小于0.05，数据是正态的"}],"answer":["B"],"note":"","analysis":"- **判读要点**：概率图**弯曲并呈起伏状**偏离直线，AD=5.092 很大，P<0.005 → **非正态**。\n- A 错（标题\"正态\"字样不代表数据正态）；C 错（AD 大才拒绝正态）；D 错（P<0.05 是**拒绝**正态）。选 B。","traps":["见标题\"正态\"二字就认定正态","把P<0.05当成\"是正态\""],"memory":"P<0.05是拒绝正态；图弯曲起伏=非正态，选B。"},{"id":51,"type":"计算","tag":"Cpm","ch":"C8","stem":"设某质量特性X~N(54, 3²)，它的上、下规范限USL=65，LSL=35，设定质量特性的目标值为50，计算过程能力指数Cpm为：","options":[{"k":"A","t":"1.667"},{"k":"B","t":"1.222"},{"k":"C","t":"1"},{"k":"D","t":"0.733"}],"answer":["C"],"note":"Cpm=(USL-LSL)/(6√(σ²+(μ-T)²))=30/(6√(3²+4²))=30/(6×5)=1，恰为整数。","analysis":"- **公式（含目标值偏移的田口式能力指数）**：Cpm = (USL−LSL) / [6·√(σ² + (μ−T)²)]\n- **计算**：USL−LSL = 30；σ²=9，(μ−T)²=(54−50)²=16 → √(9+16)=√25=5 → Cpm = 30/(6×5) = **1**（精确值）。","traps":["Cpm分母漏加目标值偏移项(μ−T)²"],"memory":"Cpm=(USL−LSL)/[6√(σ²+(μ−T)²)]=30/(6×5)=1。"},{"id":52,"type":"概念","tag":"过程能力前提","ch":"C8","stem":"某六西格玛团队在进行过程能力分析时，对于是否需要进行过程稳定性、数据正态性和独立性三方面的检查发生了分歧，以下说法正确的是：","options":[{"k":"A","t":"稳定性是过程能力分析的前提"},{"k":"B","t":"只要数据满足正态性和稳定性，则独立性就一定没有问题"},{"k":"C","t":"只要数据满足正态性和独立性，则稳定性就一定没有问题"},{"k":"D","t":"只要数据满足正态性，则稳定性和独立性就一定没有问题"}],"answer":["A"],"note":"","analysis":"- 过程能力分析三前提：**稳定性（统计受控）、正态性、独立性**——但**稳定性是最基本前提**（过程不稳定，Cp/Cpk 无意义）。","traps":["以为满足正态+稳定就自动独立（互相不蕴含）"],"memory":"能力分析三前提：稳定、正态、独立——稳定是前提之首。"},{"id":53,"type":"概念","tag":"过程能力异常诊断","ch":"C8","stem":"某项目团队在测量阶段评价某项目指标\"温度\"的过程能力，收集温度数据时每半小时测量一次，每次测得1个数据，共收集30个数据，过程稳定且数据服从正态分布，采用MINITAB计算得出：Cp=1.3，Pp=0.4，根据这一结果，下列哪个推断可能是正确的？","options":[{"k":"A","t":"过程独立性有问题存在，过程数据存在自相关性"},{"k":"B","t":"过程分布中心和公差中心存在较大偏移"},{"k":"C","t":"Pp数据不可信，Cp数据是可信的"},{"k":"D","t":"以上判断都不对"}],"answer":["A"],"note":"Cp远大于Pp说明组内波动远小于总波动，典型自相关（相邻数据高度相关）表现","analysis":"- **关键现象**：Cp（过程能力指数）=1.3 但 Pp（过程性能指数）=0.4，**Cp ≫ Pp**。\n- **机理**：Cp 用**组内（子组内）波动** σ_within 计算，Pp 用**总波动**（含组间）计算。Cp≫Pp 说明组内波动远小于总波动——典型的**自相关（相邻数据高度相关）**，半小时采一个点、共 30 个点的时间序列数据极易如此。\n- B 错（均值偏移影响 Cpk/Cpm，且此处无证据）；C 错（Pp 并非不可信，两者口径不同，差异本身说明问题）。选 A。","traps":["把Cp≫Pp判成中心偏移（那是Cpk的事）"],"memory":"Cp≫Pp=组内波动远小于总波动=自相关（A）。"},{"id":54,"type":"概念","tag":"SERVQUAL","ch":"C4","stem":"SERVQUAL模型是著名的服务质量评价模型，它主要从如下哪几个维度对顾客服务质量进行测量？","options":[{"k":"A","t":"有形性、易逝性、响应性、保证性、移情性"},{"k":"B","t":"有形性、可靠性、易逝性、保证性、移情性"},{"k":"C","t":"有形性、可靠性、响应性、保证性、移情性"},{"k":"D","t":"有形性、可靠性、响应性、保证性、易逝性"}],"answer":["C"],"note":"","analysis":"- **SERVQUAL 五维度**：**有形性（Tangibles）、可靠性（Reliability）、响应性（Responsiveness）、保证性（Assurance）、移情性（Empathy）**。\n- 干扰项都是把\"可靠性\"换成\"易逝性\"（易逝性是服务的特性之一，不是 SERVQUAL 维度）。记口诀：**形可响应保移**。","traps":["\"易逝性\"混入SERVQUAL维度"],"memory":"SERVQUAL五维度口诀：形可响应保移。"},{"id":55,"type":"概念","tag":"多变异分析","ch":"C6","stem":"在项目中要识别和确定影响过程波动的变异源，在多变异分析（multi-vari analysis）中，通常将变异源划分为三类，请确定是哪三类？","options":[{"k":"A","t":"时间变异、产品间变异和产品内变异"},{"k":"B","t":"时间变异、位置变异和噪声变异"},{"k":"C","t":"可控变异、噪声变异和时间变异"},{"k":"D","t":"可控变异、周期性变异和噪声变异"}],"answer":["A"],"note":"","analysis":"- 多变异分析（multi-vari）三类变异源：**时间变异（ temporal / 随时间）、产品间变异（piece-to-piece）、产品内变异（within piece / 位置内）**。选 A。","traps":["被\"可控/噪声/周期\"类干扰项带偏"],"memory":"多变异三类：时间变异、产品间变异、产品内变异。"},{"id":56,"type":"概念","tag":"相关分析","ch":"C6","stem":"下面是对X和Y两组数据进行\"散点图\"和\"相关分析\"的结果：散点图显示X增大时Y明显减小（从左上到右下），相关分析：Y与X的Pearson相关系数=-0.933，P值=0.000。能够得出的最确切的结论为：","options":[{"k":"A","t":"X是Y的重要影响因素"},{"k":"B","t":"X、Y两组数据有较强的因果关系"},{"k":"C","t":"两组数据有强的相关性"},{"k":"D","t":"目前无法得出任何结论，只有进一步进行回归分析，才能进行判断"}],"answer":["C"],"note":"相关≠因果，相关系数只说明线性相关强度","analysis":"- 相关系数 r=−0.933（强负相关）、P=0.000（显著）→ 只能说 **X、Y 有强的（负）线性相关**。\n- **相关 ≠ 因果**：A 的\"重要影响因素\"、B 的\"因果关系\"都不能仅凭相关系数断定。选 C。","traps":["由r=−0.933直接断言因果关系或\"重要影响因素\""],"memory":"相关再强也只是相关；因果要靠试验/机理确认。"},{"id":57,"type":"概念","tag":"描述统计图判读","ch":"C6","stem":"从下述轴杆长度的描述性统计图中可以得出的正确结论是：（正态性检验 A²=0.56、P=0.139；均值15.021、中位数14.990、Q1=14.934、Q3=15.099、N=30、偏度0.818；95%平均值置信区间14.977-15.065、95%中位数置信区间14.957-15.053）","options":[{"k":"A","t":"长度分布明显右偏，不服从正态分布"},{"k":"B","t":"有25%的数据大于或等于15.099"},{"k":"C","t":"有95%的数据落在14.977-15.065之间"},{"k":"D","t":"有95%的数据落在14.957-15.053之间"}],"answer":["B"],"note":"B是四分位数定义性事实（Q3=15.099→75%数据≤15.099，即25%数据≥15.099），与分布形状、P值无关，无条件成立；C/D是图中均值/中位数**95%置信区间**被偷换成\"95%的数据落在其中\"——置信区间描述的是参数位置，不是个体数据范围；A错：P=0.139>0.05 正态性检验不拒绝正态，\"不服从正态分布\"不成立","analysis":"- **关键数据**：Q3=15.099 → 75% 数据 ≤15.099 → **25% 数据 ≥15.099**，B 对。\n- A 错：虽然偏度 0.818 表明右偏，但 AD 检验 P=0.139>0.05 **不能拒绝正态**，\"不服从正态分布\"无从断言；C、D 把**均值的置信区间、中位数的置信区间**偷换成\"95%的数据落在其中\"。\n- **答题要点**：看到 Q1/Q3 类信息，优先推出四分位数相关的确定结论。","traps":["把均值的95%置信区间当成\"95%的数据范围\"","由偏度右偏直接断定\"不服从正态\"（P=0.139不拒绝）"],"memory":"Q3=15.099→25%数据≥15.099（B）；置信区间讲参数不讲个体。"},{"id":58,"type":"计算","tag":"卡方检验","ch":"C9","stem":"为了研究全国主要城市银行对第二套住房发放贷款宽严程度是否不同，调查了北京、上海和深圳三个城市的黄金商业区的四大银行贷款综合情况，记录了申请总数、批准数和未批准数（北京236：获准40/未准196；上海230：获准52/未准178；深圳197：获准67/未准130；总计663：159/504），卡方分析结果：卡方=17.508，DF=2，P值=0.000。基于该结果，正确的解释是：","options":[{"k":"A","t":"三城市的银行对第二套住房发放贷款宽严程度没有什么不同"},{"k":"B","t":"三城市的银行对第二套住房发放贷款宽严程度有显著不同"},{"k":"C","t":"该问题自由度太小，得不出结论"},{"k":"D","t":"以上都不对"}],"answer":["B"],"note":"","analysis":"- **判读**：χ²=17.508，DF=2，**P=0.000 < 0.05** → 拒绝原假设（三城市宽严程度相同）→ **三城市宽严程度有显著不同**。\n- 从原始数据也能看出趋势：获准比例 北京 40/236≈17%、上海 52/230≈23%、深圳 67/197≈34%，深圳明显更宽松。选 B。","traps":["以为自由度小就得不出结论"],"memory":"P=0.000<0.05：拒绝\"无差异\"，三城市宽严显著不同（B）。"},{"id":59,"type":"概念","tag":"非参数检验","ch":"C9","stem":"为了检验一批二极管的平均值是否比原来的5000小时确有提高，从生产线上随机抽取25支二极管，记录了它们的寿命。经检测，这批数据是相互独立的，分布大体上是对称的，但却不服从正态分布。在25支二极管中，有8支二极管寿命小于5000小时，用非参数检验中的\"符号检验法\"得不出\"有显著提高\"的结论。这时应该：","options":[{"k":"A","t":"数据不符合正态分布是不正常的，因此可以肯定是数据抽样过程有毛病。应再次抽样，重新进行判定"},{"k":"B","t":"相信符号检验的结果，寿命的平均值并未比原来的5000小时有提高"},{"k":"C","t":"用同一批数据，使用非参数检验中的单样本\"Wilcoxon符号秩检验法\"再次判断，有可能判断为\"确有提高\""},{"k":"D","t":"用同一批数据，使用非参数检验中的\"Mann-Whitney检验法\"再次判断，有可能判断为\"确有提高\""}],"answer":["C"],"note":"符号检验只利用\"正负号\"信息（25支中8支小于5000小时），Wilcoxon符号秩检验还利用偏离程度信息，对对称分布更敏感，有可能得出不同结论；此为官方答案，理解两种非参数检验的差异是关键","analysis":"- **核心差异（高频易错）**：\n- **符号检验**：只用\"正负号\"信息（25 支中 8 支 <5000 小时），忽略偏离大小 → 功效低，得不出显著结论；\n- **Wilcoxon 符号秩检验**：既用符号又用**偏离程度（秩）**，数据分布对称时更敏感，**有可能**判断为\"确有提高\"。\n- D 错：Mann-Whitney 是**两独立样本**检验，此处是**单样本**对 5000 小时的比较，不适用。A 错（非正态是常见情况，不必怀疑抽样）。选 C。","traps":["单样本问题误用Mann-Whitney（两样本工具）"],"memory":"数据对称但非正态：符号检验升级为Wilcoxon符号秩检验。"},{"id":60,"type":"概念","tag":"ANOVA条件","ch":"C9","stem":"M车间的任务是将厚度为60毫米的厚钢板热压为厚度为45毫米的薄钢板。每块钢板都要大约40秒才能完成热压。为了检验厚钢板温度对于热压时间是否有显著影响，选定了1300℃，1260℃，1220℃三种初始温度，各热压了10块厚钢板，共记录了3组总计30个热压时间数据。在分析时，准备使用单因子的方差分析ANOVA以比较平均热压时间是否有显著差异。为此应考虑验证下列条件：1）3组数据都满足独立性 2）3组数据都满足正态性 3）合并后的30个数据满足正态性 4）经检验，可以认为3组数据的方差是相等的。正确的要求是：","options":[{"k":"A","t":"应验证1）2）"},{"k":"B","t":"应验证1）2）4）"},{"k":"C","t":"应验证1）3）4）"},{"k":"D","t":"应验证1）2）3）4）"}],"answer":["B"],"note":"ANOVA要求：独立性、各组数据正态性、方差齐性——验证1）2）4）；\"合并后数据正态\"不成立（各组均值不同时合并数据必非正态）","analysis":"- **单因子 ANOVA 三前提**：① 各组数据**独立性**；② **各组**数据**正态性**（逐组验证，不是合并验证）；④ **方差齐性**（等方差）。\n- ③ 错：3 组均值不同时，**合并后的 30 个数据必然不服从正态**（混合分布），验证合并正态性无意义且必失败。选 B（1）2）4））。","traps":["验证\"合并后30个数据\"的正态性（必失败且无意义）"],"memory":"ANOVA三前提：独立+各组正态+方差齐（1、2、4）。"},{"id":61,"type":"概念","tag":"假设检验选择","ch":"C9","stem":"在验证原因时，下列哪一种假设检验方法不需要先对有关数据进行正态性检验？","options":[{"k":"A","t":"t检验"},{"k":"B","t":"配对t检验"},{"k":"C","t":"Mann-Whitney检验"},{"k":"D","t":"F检验"}],"answer":["C"],"note":"Mann-Whitney是非参数检验，不要求正态性","analysis":"**考点：参数检验与非参数检验的分界。**\n- 需要正态性假设的：t检验（含配对t）、Z检验、F检验、方差分析——都是参数方法。\n- 不要求正态性的：Mann-Whitney（两独立样本）、Wilcoxon符号秩（配对）、Kruskal-Wallis（多组）、符号检验。\n- 记忆口诀：**\"知道σ用Z，方差未知用t，正态不明上非参\"**。注意配对t检验虽处理差值，但差值必须近似正态，仍属参数检验。","traps":["以为配对t检验不需正态（差值须近似正态）"],"memory":"非参数免正态：Mann-Whitney；t/F/配对t都要正态。"},{"id":62,"type":"概念","tag":"双样本检验","ch":"C9","stem":"某工程师在对弹簧生产过程进行工艺改进后声称，改进后的工艺生产出的弹簧至少比原来的弹簧平均强度高出50牛顿。假设工艺改进前后生产出的弹簧强度数据均服从正态分布，且前后方差基本没有变化。问采用什么方法验证工程师的结论？","options":[{"k":"A","t":"t检验"},{"k":"B","t":"F检验"},{"k":"C","t":"卡方检验"},{"k":"D","t":"以上都不对"}],"answer":["A"],"note":"两正态总体方差未知但相等→双样本t检验（或单边）","analysis":"**考点：两独立正态总体、方差未知但相等 → 合并方差双样本 t 检验（pooled t）。**\n- 别被\"至少高出50牛顿\"迷惑，它只是检验方向（单边 H1：μ新−μ旧>50），工具仍是双样本 t 检验。\n- 若方差未知**且不等**→ 用 Welch 校正的 t 检验；已知方差 → Z 检验。这题明确说\"方差基本没变化\"，锁定合并方差 t。","traps":["被\"至少高出50牛顿\"迷惑而偏离方法选择"],"memory":"两正态、方差相等、比均值（单边）=合并方差双样本t。"},{"id":63,"type":"概念","tag":"单样本检验","ch":"C9","stem":"一位工程师想知道一种压滤机完成压滤工作的平均周期时间是否大于55分钟，已知过程正态、独立，方差未知。最适当的假设检验方法是：","options":[{"k":"A","t":"单边单样本t检验"},{"k":"B","t":"双边单样本t检验"},{"k":"C","t":"单边单样本Z检验"},{"k":"D","t":"双样本t检验"}],"answer":["A"],"note":"\"是否大于\"→单边；方差未知→t检验","analysis":"**考点：单样本 + \"是否大于\" → 单边单样本 t 检验。**\n- \"大于/小于/超过/不足\"→ **单边**；\"是否等于/有无差异\"→ **双边**。\n- 方差未知 → 用 t 不用 Z；只有一个样本与已知常数比 → 单样本，不是双样本。","traps":["单双侧与Z/t选择混乱"],"memory":"\"大于\"→单边；方差未知→t：单边单样本t检验。"},{"id":64,"type":"概念","tag":"多组非参数检验","ch":"C9","stem":"抗拉强度是A产品的关键质量特性之一，三条生产线同时生产A产品，项目组想知道三条生产线所产出的A产品之抗拉强度是否具有统计意义上的差异，且其中有一条生产线的数据为非正态，下面哪种分析方法更适合？","options":[{"k":"A","t":"t检验"},{"k":"B","t":"Mann-Whitney检验"},{"k":"C","t":"单因子方差分析"},{"k":"D","t":"Kruskal-Wallis检验"}],"answer":["D"],"note":"多组比较+非正态→Kruskal-Wallis（非参数ANOVA）","analysis":"**考点：组数与正态性的组合决定方法。** 这张对应表要背熟：\n\n| 组数 | 数据正态 | 数据非正态 |\n|---|---|---|\n| 2组 | 双样本 t | Mann-Whitney |\n| ≥3组 | 单因子方差分析 | **Kruskal-Wallis** |\n\n题目\"三条生产线 + 一条非正态\"→ 多组 + 非参数 → Kruskal-Wallis。**Mann-Whitney 只适用于两组**，是常见干扰项。","traps":["三组数据误选Mann-Whitney（只适用两组）"],"memory":"两组Mann-Whitney，三组及以上非正态用Kruskal-Wallis。"},{"id":65,"type":"概念","tag":"配对检验","ch":"C9","stem":"皮肤科医生发明了一种改进配方的治疗顽固牛皮癣的外用药膏，希望验证新配方确实比老配方在杀灭癣菌上效果更好。选定40个双腿对称患牛皮癣的病人（假设每个病人用药前双腿上表皮癣菌相同），对每一人的双腿随机选定使用老配方和新配方，双腿皆同时涂抹，三周后对双腿分别记录了表皮癣菌的含量。下面应该进行的检验是：","options":[{"k":"A","t":"双样本均值相等性检验"},{"k":"B","t":"配对样本t检验"},{"k":"C","t":"F检验"},{"k":"D","t":"方差分析"}],"answer":["B"],"note":"同一病人双腿配对→配对t检验（成对数据）","analysis":"**考点：识别成对数据。** 同一病人双腿分别用两种药膏 → 同一受试对象上的两种处理 → **配对设计**。配对 t 检验等价于对每条差值做单样本 t 检验（H0：μd=0）。判断标准：数据是否**天然成对**（同人前后、同批左右、同一部件两次测量）——成对就用配对 t，两批独立样本才用双样本 t。","traps":["同一病人双腿数据被当成独立双样本"],"memory":"天然成对（同人双腿）→配对样本t检验。"},{"id":66,"type":"概念","tag":"ANOVA结果解释","ch":"C9","stem":"收集了3个班组生产的薄钢板强度数据。对下列方差分析结果解释最正确的是：（单因子方差分析：强度 versus 班组；来源-班组：DF=2，SS=6.822，MS=3.411，F=29.40，P=0.000；误差：DF=27，SS=3.133，MS=0.116；合计：DF=29，SS=9.954；S=0.3406，R-Sq=68.53%，R-Sq(调整)=66.20%）","options":[{"k":"A","t":"班组间强度无差异"},{"k":"B","t":"每个班组之间强度都有差异"},{"k":"C","t":"至少有一个班组与其他班组之间的强度有差异"},{"k":"D","t":"无法由此结果判断班组间强度是否有显著差异"}],"answer":["C"],"note":"F检验显著（P=0.000）只说明\"至少有一组不同\"，不能断言两两都不同（需多重比较）","analysis":"**考点：F 检验显著 ≠ 两两都有差异。**\n- H0：所有班组均值相等；H1：**至少一组不同**。P=0.000<0.05 → 拒绝 H0 → 只能说\"至少有一个班组与其他班组有差异\"（选项 C）。\n- 要说\"两两都不同\"（选项 B）必须再做**多重比较（Tukey、Bonferroni 等）**。\n- 数据自洽核验：SS班组 6.822 + SS误差 3.133 = 9.955 ≈ SS合计 9.954 ✓；F=MS班组/MS误差=3.411/0.116≈29.4 ✓。","traps":["F显著就断言\"每两个班组都不同\""],"memory":"显著只说明\"至少一组不同\"；两两比较需多重检验，选C。"},{"id":67,"type":"概念","tag":"感知质量","ch":"C4","stem":"感知质量被定义为：感知质量=实际质量-期望质量。基于这一公式，正确的理解为：","options":[{"k":"A","t":"实际质量与期望质量相等时，感知质量为零，表示顾客的感知质量很差"},{"k":"B","t":"实际质量与期望质量相等时，期望与实际相符，此时顾客会喜出望外"},{"k":"C","t":"实际质量与期望质量相等时，期望与实际相符，一般不会产生顾客抱怨"},{"k":"D","t":"实际质量与期望质量相等时，期望与实际相符，表明此时的服务质量达到了最佳状态"}],"answer":["C"],"note":"感知=实际-期望，相等时感知质量为零（无抱怨也无惊喜），最佳是实际>期望","analysis":"**考点：感知质量 = 实际质量 − 期望质量。**\n- 相等 → 感知质量 = 0 → 符合期望，**一般不产生抱怨**，但也不会喜出望外（B错）。\n- **零≠差**（A 错）；**最佳状态是实际>期望**，即正感知、超出期望（D 错）。\n- 对应顾客满意理论：期望−感知差距模型，负差距=抱怨，零差距=无怨言，正差距=惊喜。","traps":["把感知质量为零当成\"很差\"或\"最佳\""],"memory":"相等=零差距：不抱怨也不惊喜；最佳是实际>期望。"},{"id":68,"type":"概念","tag":"DOE基本概念","ch":"C10","stem":"以下对试验设计（DOE）表述错误的是：","options":[{"k":"A","t":"部分因子试验只能分析主效应，不能分析交互作用"},{"k":"B","t":"部分因子试验只做全因子试验中的部分设计点来进行分析"},{"k":"C","t":"全因子试验可以分析到全部的交互作用"},{"k":"D","t":"试验因子个数超过5个以上时，一般不建议使用全因子试验"}],"answer":["A"],"note":"部分因子试验可以分析部分（可估计的）交互作用，只是有混杂","analysis":"**考点：部分因子试验的能力边界。** A 的说法\"只能分析主效应，不能分析交互作用\"是**错误**的——部分因子试验**可以分析部分（可估计的）交互作用**，只是存在混杂/混淆（aliasing）。其余：B（只做部分设计点 ✓）、C（全因子可估计全部交互 ✓）、D（因子>5 不建议全因子 ✓，2^6=64 次代价过高，改用部分因子或筛选设计）。","traps":["以为部分因子试验完全不能分析交互作用"],"memory":"部分因子可分析可估计的交互，代价是混杂。"},{"id":69,"type":"概念","tag":"响应曲面设计","ch":"C10","stem":"六西格玛团队在半导体封装某个工艺的改善过程中已经完成了三个因子的全因子试验设计，但是发现存在明显的曲性。为了优化工艺参数希望拟合出2阶模型，但是输入因素为\"功率\"（单位：mW），原先的高、低水平分别为40和50，由此产生的轴向延伸试验点分别为37.93和52.07，超出了设备可控制的功率设置范围[38.5, 51.5]，这时，由于试验成本很高，团队希望尽量使用上次全因子设计的数据，以下哪种方法最适合该六西格玛团队采用？","options":[{"k":"A","t":"改用Box-Behnken设计试验方案"},{"k":"B","t":"改用三水平设计"},{"k":"C","t":"使用中心复合设计近似旋转性试验方案，轴向延伸试验点自定义改为38.5和51.5，其他不变"},{"k":"D","t":"使用中心复合设计CCI试验方案，先确定轴向延伸试验点为38.5和51.5，再反推出高、低水平试验点为40.4和49.6"}],"answer":["C"],"note":"近似旋转性CCD允许自定义轴向点（α值可调），保留原有全因子数据；CCI则需反推高低水平、改动原设计","analysis":"**考点：CCD 三种变体及\"保留原数据\"的序贯思想。** 这道题数值上可以算清楚：\n- 中心点 45、半宽 5，α=√2≈1.414 → 轴向点 45±5×1.414 = 37.93 / 52.07，超出设备范围 [38.5, 51.5]。\n- 方案 C：把轴向点**自定义改为 38.5 / 51.5**（对应 α≈1.3），全因子角点（40/50）和其他设计点不变 → **近似旋转性 CCD**，完美利用上次全因子数据，只是旋转性略不精确。\n- 方案 D（CCI 内切型）：轴向点取在 38.5/51.5 后要**反推新的高低水平 40.4/49.6**（角点内缩），原 40/50 的数据全部作废——成本高，不选。\n- 记忆：**CCC 可序贯（α>1 外扩）、CCF 面心（α=1，3水平）、CCI 内切（反推水平，动原设计）**；BBD 虽免轴向点，但同样无法利用原全因子数据。","traps":["选CCI反推水平——原全因子数据全部作废"],"memory":"要保留原数据：自定义轴向点的近似旋转CCD（C）。"},{"id":70,"type":"计算","tag":"部分因子试验次数","ch":"C10","stem":"在部分因子设计中，利用下面这张表来制定试验计划非常重要。六西格玛团队在分析过程改进时，大家共同确认至少要考虑9个因子。但试验目标中，不但要考虑9个因子的主效应，还要求这9个主效应不能与任何二阶交互作用效应相混杂（confounded），试验者还想知道9个因子的影响是否存在弯曲性，考虑增加4个中心点。这时安排试验至少要多少次？（分辨率表：32次试验/9因子可达分辨率IV，128次/9因子可达分辨率VI）","options":[{"k":"A","t":"32"},{"k":"B","t":"36"},{"k":"C","t":"68"},{"k":"D","t":"132"}],"answer":["B"],"note":"**分辨率IV的定义就是\"主效应不与二阶交互混杂\"**（IV：主效应与三阶交互混杂、二阶交互与二阶交互混杂）→ 32次试验即可达IV → 32+4中心点=36次；分辨率VI是更强要求，本题不需要","analysis":"**考点：分辨率含义 + 中心点。**\n- \"主效应不与任何二阶交互混杂\" 正是**分辨率 IV** 的定义；查表：9 因子分辨率 IV → 32 次（=2^(9−4)）；加 4 个中心点检验弯曲性 → **32+4=36**。\n- 干扰项拆解：132 = 误按分辨率 VI（128+4）；68 无依据。**看到\"至少要几次\"先想分辨率够不够，再想中心点**。","traps":["按分辨率VI（128次+4=132）过度设计","漏加4个中心点"],"memory":"主效应不混二阶=分辨率IV：9因子32次+4中心=36。"},{"id":71,"type":"计算","tag":"全因子试验规模","ch":"C10","stem":"某个全因子试验运行次数（run）为36次，因子的水平都为2，还知道重复次数为2，中心点的试验数为4，则实施此次全因子试验的因子数是多少？","options":[{"k":"A","t":"3"},{"k":"B","t":"4"},{"k":"C","t":"5"},{"k":"D","t":"6"}],"answer":["B"],"note":"36=2^k×2+4→2^k×2=32→2^k=16→k=4","analysis":"**解析**：全因子部分共 36−4（中心点）=32 次；重复 2 次 → 基础设计点 2^k=16 → **k=4**。","traps":["忘了扣除中心点、漏乘重复次数"],"memory":"runs=2^k×重复+中心点：36=2^k×2+4→k=4。"},{"id":72,"type":"概念","tag":"CCF设计","ch":"C10","stem":"在提高压塑板断裂强度的全因子试验中，对于因子A（温度，两水平取为220℃及240℃）、因子B（压力，两水平取为360帕及400帕）进行了含3个中心点共7次试验后，发现响应曲面有严重的弯曲现象。为此希望进行响应曲面设计，得到二阶回归方程。由于压力机最高只能取400帕，本试验的成本又较高，希望能在归纳出二阶回归方程的条件下尽量减少试验次数，最好的办法是：","options":[{"k":"A","t":"采用CCC（中心复合序贯设计），只再增加4个星号点（轴向点）试验"},{"k":"B","t":"采用CCI（中心复合有界设计），只再增加4个星号点（轴向点）试验"},{"k":"C","t":"采用CCF（中心复合表面设计），只再增加4个星号点（轴向点）试验"},{"k":"D","t":"采用CCF（中心复合表面设计），除再增加4个星号点（轴向点）试验外，还要再加3个中心点试验"}],"answer":["C"],"note":"CCC的α>1会超出因子范围，CCI的α<1则浪费了已有的角点信息。\n压力上限400帕（因子B不能超范围）→轴向点在立方体表面的CCF最合适，不超出设备范围","analysis":"**考点**：CCC / CCI / CCF 三种中心复合设计的区别。\n**解题**：响应曲面弯曲 → 需二阶模型；因子 B 压力**上限 400 帕，轴向点不能超出试验范围**：\n- CCC（α>1，轴向点外推）→ 超出上限，排除；\n- CCI（α<1，轴向点内缩）→ 可行但需 5 个水平、预测精度不均；\n- **CCF（α=±1，轴向点在立方体表面，仅 3 水平）→ 不超范围、试验次数最少**。\n原 2² 全因子 + 3 中心点 = 7 次已完成，再补 4 个轴向点即可，共 11 次。D 多加 3 个中心点非必需（弯曲已检出）。\n**易错**：混淆 CCI 与 CCF 的水平数；记住\"CCC 外推、CCI 内缩、CCF 贴表面（α=1）\"。","traps":["压力上限400帕时误选外推的CCC"],"memory":"设备上限卡死→轴向点贴表面的CCF（α=1）。"},{"id":73,"type":"计算","tag":"部分因子设计生成元","ch":"C10","stem":"在一个试验设计问题中，共需要考察6个因子A、B、C、D、E及F，但经费所限最多只能进行20次试验（中心点在内）。此实际问题要求，除6个因子的主效应必须估计之外，还必须估计出AB、BC、CE及DF共4个二阶交互效应。问：下列哪个生成元的选择是可行的？","options":[{"k":"A","t":"E=ABC，F=ABD"},{"k":"B","t":"E=ACD，F=BCD"},{"k":"C","t":"E=BCD，F=ABC"},{"k":"D","t":"E=ABD，F=ABC"}],"answer":["C"],"note":"2^(6-2)=16次基本试验（+中心点≤20）即1/4部分因子，需2个生成元。逐项检查定义关系与别名：\n- A（E=ABC，F=ABD）：定义关系 I=ABCE=ABDF=CDEF → AB 与 CE 混杂（ABCE），而 AB、CE 都必须估计，不可行；\n- B（E=ACD，F=BCD）：I=ACDE=BCDF=ABDEF → BC 与 DF 混杂（BCDF），二者都必须估计，不可行；\n- D（E=ABD，F=ABC）：I=ABDE=ABCF=CDEF → CE 与 DF 混杂（CDEF），不可行；\n- **C（E=BCD，F=ABC）**：I=BCDE=ABCF=ADEF，全部词长为4（分辨率IV）→ 主效应不与任何二阶交互混杂；所需交互中仅 AB 与 CF（非必需项）互为别名，BC=DE、CE=BD、DF=AE 亦只与非必需二阶交互别名 → 4 个必需交互均可估计，**可行**。","analysis":"**考点**：生成元、定义关系、分辨率。\n- 1/4 部分因子有 3 个体词（2 个生成元 + 广义交互项），分辨率 = 最短词长。\n- 判定流程：写出定义关系 → 检查主效应是否与二阶交互混杂（分辨率）→ 逐一检查\"必须估计的效应\"是否落进同一体词。","traps":["必需交互效应互为别名仍认为可行"],"memory":"写定义关系→查词长→必需效应不同词：C（BCDE/ABCF/ADEF）可行。"},{"id":74,"type":"概念","tag":"回归模型层级原则","ch":"C9","stem":"在2水平4因子的全因子试验中，通过统计分析只发现因子C及交互作用A*B是显著的，而A、B、D均不显著，则回归模型中应至少包括：","options":[{"k":"A","t":"因子C及交互作用A*B"},{"k":"B","t":"因子A、B、C及交互作用A*B"},{"k":"C","t":"因子A、B、C及交互作用A*B、A*C、B*C"},{"k":"D","t":"以上都不对"}],"answer":["B"],"note":"层级原则——交互作用A*B显著时，其构成的主效应A、B必须保留在模型中","analysis":"**考点**：层级/遗传原则（hierarchy / heredity）。\n**解题**：A*B 显著 ⇒ 其构成主效应 **A、B 必须保留**（否则模型不嵌套、解释困难）；C 显著保留；D 不显著剔除。A*C、B*C 不显著也无保留依据。\n**易错/延伸**：区分强层级（交互显著→主效应必留）与弱层级（交互显著→主效应建议考虑）。这是模型缩减（如逐步回归）的常用约束。","traps":["显著交互A*B的主效应A、B没有保留在模型中"],"memory":"层级原则：交互显著，其构成主效应必须保留（B）。"},{"id":75,"type":"概念","tag":"5S管理","ch":"C5","stem":"以下哪项内容不属于5S管理活动的内容？","options":[{"k":"A","t":"工人加工完零件后，把工装取下，放入指定位置"},{"k":"B","t":"工程师在生产线上安装报警灯，生产线一停，报警灯亮"},{"k":"C","t":"工人在交接班前把机器旁的废料、边角料等清理干净"},{"k":"D","t":"文书把不同类型的文件分类整理，做上标示，放入指定位置的文件柜"}],"answer":["B"],"note":"5S=整理、整顿、清扫、清洁、素养；报警灯属于防错（Poka-Yoke）/可视化管理，不属于5S","analysis":"**考点**：5S = 整理、整顿、清扫、清洁、素养。\n- A 归位→整顿；C 清理废料→清扫；D 分类标示归档→整理/整顿；**B 报警灯→防错（Poka-Yoke）/可视化管理，不属于 5S**。\n**延伸**：题目爱考\"哪个不是 5S\"的陷阱项，防错、TPM、看板管理常被混入。","traps":["把报警灯（防错/目视化）当成5S"],"memory":"5S=整理整顿清扫清洁素养；防错不在其列。"},{"id":76,"type":"概念","tag":"合理子组原则","ch":"C8","stem":"绘制均值-极差（或均值-标准差）控制图时，确定合理子组的原则是：","options":[{"k":"A","t":"子组数量应该在5个以下"},{"k":"B","t":"组内差异只由随机变异造成"},{"k":"C","t":"组内差异应大于组间差异"},{"k":"D","t":"不存在组内差异"}],"answer":["B"],"note":"合理子组=组内仅含偶然（随机）变异，组间才暴露异常变异；同一子组应在短时间/相同条件下抽样","analysis":"**考点**：合理子组（rational subgrouping）。\n**解题**：组内只应含**随机（偶然）变异**，组间才暴露异常变异——同一子组应在短时间、相同条件下抽样（如相邻产品），使组内差异尽量小。\n**易错**：C 选项\"组内差异应大于组间差异\"是常见反向陷阱。","traps":["以为组内差异应大于组间差异"],"memory":"合理子组：组内只留随机变异，组间才暴露异常。"},{"id":77,"type":"概念","tag":"计数控制图选择","ch":"C8","stem":"以下是2009年6月份我国H1N1流感感染人数统计数据，我们可以用何种控制图监控情况是否恶化？","options":[{"k":"A","t":"X̄-R图"},{"k":"B","t":"X-S图"},{"k":"C","t":"c图"},{"k":"D","t":"p图"}],"answer":["C"],"note":"每天感染人数是计数数据（事件数），用c图（缺陷数控制图）监控单位时间事件数","analysis":"**考点**：c 图适用条件。\n**解题**：每天感染人数 = **固定区间内的缺陷（事件）数**，属\"计点\"数据 → c 图。X̄-R / X-S 用于计量数据；p 图用于不合格品率（有分母）。\n**延伸**：选择口诀——计件看 p/np，计点看 c/u；区间/样本量固定看 c 或 np，不固定看 u 或 p。","traps":["计件图（p/np）与计点图（c/u）混用"],"memory":"每日感染人数=固定单位事件数→c图。计件看p/np，计点看c/u。"},{"id":78,"type":"概念","tag":"子组内样本量","ch":"C8","stem":"在纺纱车间生产中，对于湿度的控制非常重要。由于对于此种纤维材料的纺纱已经生产了一段时间，生产初步达到了稳定。为了监测全车间的湿度状况，每个整点时，在车间内用\"田\"字形矩形格记录了9处湿度数据。监测了48小时后，要根据这些数据建立控制图。这时选用下列哪种控制图效果最好？","options":[{"k":"A","t":"X̄-R图"},{"k":"B","t":"X-S图"},{"k":"C","t":"I-MR图（单值移动极差控制图）"},{"k":"D","t":"p图"}],"answer":["B"],"note":"子组内n=9（9处湿度），n>6时用S图（标准差）比R图更有效","analysis":"**考点**：n 较大时用 S 图。\n**解题**：每子组 n=9（9 处湿度）> 6，S 比 R 更有效（R 只用两个极值，n 大时信息浪费、稳健性差）。n=1 用 I-MR，n=2~5 用 R，n≥6 用 S。\n**易错**：别因\"9 处\"联想到其他图；p 图是计数图，与计量湿度无关。","traps":["子组n=9仍用R图（大n时R浪费信息）"],"memory":"n≥6用X̄-S图更有效；n=1用I-MR。"},{"id":79,"type":"概念","tag":"np图与p图","ch":"C8","stem":"在半导体芯片生产中，要将直径8英寸（约合20厘米）的晶圆盘（wafer）切割成3000粒小芯片（die）。目前由于工艺水平的限制，小芯片仍有约1%~2%的不良率。试生产了一段时间后，生产初步达到了稳定。为了监测小芯片的不良率，在两个月内每天固定抽检5个晶圆盘，测出不良小芯片总数。要根据这些数据建立控制图。这时应选用下列何种控制图？","options":[{"k":"A","t":"np图或p图都可以，两者效果一样"},{"k":"B","t":"np图或p图都可以，np图效果更好"},{"k":"C","t":"np图或p图都可以，p图效果更好"},{"k":"D","t":"以上都不对"}],"answer":["A"],"note":"样本量恒定时两图一一对应，控制限判断完全一致，所以\"效果一样\"。\n官方答案为A（np图与p图皆可、效果一样）；实际应用中样本量恒定时np图更方便","analysis":"**考点**：np 与 p 的等价性。\n**解题**：每天固定 5 个晶圆盘 × 3000 die，**样本量恒定**，np 图与 p 图数学等价（np = n·p，仅刻度不同），效果一样。\n**延伸**：题面若样本量**不等**，p 图更合适（np 图要求恒 n）；官方答案 A 有争议点在于实践中恒 n 时 np 图更常用，但考试以官方口径\"两者效果一样\"为准。","traps":["以为恒定样本量下np图与p图效果有差异"],"memory":"恒n时np与p数学等价、效果一样（官方口径A）。"},{"id":80,"type":"计算","tag":"控制图选择","ch":"C8","stem":"从生产线上收集到上一周的生产汇总数据如下表（生产量：周一210、周二245、周三197、周四228、周五216、周六236、周日207；不合格品数：5、7、4、3、8、10、5），如果需要实施统计过程控制，选择哪种控制图最合适？","options":[{"k":"A","t":"均值-极差控制图"},{"k":"B","t":"np控制图"},{"k":"C","t":"p控制图"},{"k":"D","t":"u控制图"}],"answer":["C"],"note":"不合格品数（计件）且每天生产量（样本量）不等→p图（不合格品率图）可处理变样本量；np图要求样本量恒定","analysis":"**考点**：变样本量时的计件控制图。\n**解题**：每天生产量不等（197~245）→ **np 图要求恒 n，排除**；数据是\"不合格品数\"而非缺陷数 → 用 **p 图**（可处理变 n），非 u 图（u 用于缺陷率）。\n**延伸**：p 图变 n 时控制限随 n 变化（成锯齿状），也可用平均 n 简化。","traps":["日产量不等仍选np图（要求恒n）","误选u图（那是计点）"],"memory":"变样本量计件数据→p图。"},{"id":81,"type":"概念","tag":"QFD关系矩阵","ch":"C4","stem":"在质量屋的构建中，如何确定顾客需求与工程措施之间的关系是非常重要的，下列哪种方法可以用于确定顾客需求与工程措施之间的关系？","options":[{"k":"A","t":"过程能力分析"},{"k":"B","t":"SWOT分析"},{"k":"C","t":"回归技术"},{"k":"D","t":"平衡计分卡"}],"answer":["C"],"note":"顾客需求与工程措施的关系矩阵，可用回归/相关分析定量确定","analysis":"**考点**：质量屋（HOQ）关系矩阵的定量方法。\n**解题**：顾客需求 ↔ 工程措施的关联强度，可用**回归/相关分析**定量确定。过程能力分析、SWOT、平衡计分卡均不适用。\n**延伸**：质量屋结构——屋顶（措施间相关）、房间（关系矩阵）、地下室（措施权重与排序）；关系矩阵常用符号 ○◎△ 表示强弱，定量时用回归。","traps":["把SWOT/平衡计分卡硬配给质量屋关系矩阵"],"memory":"顾客需求×工程措施关系定量确定→回归技术。"},{"id":82,"type":"概念","tag":"田口容差设计","ch":"C10","stem":"关于田口的容差设计，下述说法哪个是正确的？","options":[{"k":"A","t":"通过容差设计使容差越小越好"},{"k":"B","t":"通过容差设计使产品的质量损失最小"},{"k":"C","t":"容差大小与质量损失无关"},{"k":"D","t":"以上都不正确"}],"answer":["B"],"note":"容差设计在参数设计之后，通过权衡质量损失与成本确定经济容差","analysis":"**考点**：三次设计中的容差设计。\n**解题**：容差设计在**参数设计之后**，通过权衡**质量损失函数**（L(y)=k(y−m)²）与**制造成本**确定经济容差，目标是**损失最小**，而非\"容差越小越好\"（A 错，容差越严成本越高）。\n**延伸**：三次设计 = 系统设计（概念）→ 参数设计（定最佳参数，稳健性）→ 容差设计（定经济容差）。","traps":["以为容差设计就是容差越小越好"],"memory":"容差设计=质量损失与成本权衡，目标是损失最小。"},{"id":83,"type":"概念","tag":"FMEA","ch":"C5","stem":"在进行过程FMEA分析时，如何确定关键过程以及是否需要进行改进时，小组有不同的意见，下列意见中正确的是：","options":[{"k":"A","t":"只根据RPN（风险优先数）进行排序，选择RPN高的过程进行改进"},{"k":"B","t":"根据RPN排序，同时考虑故障模式的严重性（S），S值很高的过程也一定要改进"},{"k":"C","t":"只需根据故障模式的严重性（S）进行排序，选择S值高的过程进行改进"},{"k":"D","t":"以上说法都不对"}],"answer":["B"],"note":"RPN=S×O×D综合排序，但S（严重度）很高的模式无论RPN高低都必须改进","analysis":"**考点**：FMEA（Failure Mode and Effects Analysis，失效模式与影响分析）中 RPN（Risk Priority Number，风险优先数）与严重度 S 的关系。\n**解题**：RPN = S×O×D 用于综合排序，但**S 很高的模式（无论 RPN 高低）必须改进**——只按 RPN 排序会漏掉\"低频但致命\"的失效（A 错）；只看 S 又忽略发生频度（C 错）。\n**延伸**：S≥9 或 RPN 超阈值的处理原则；FMEA 输出驱动控制计划（Control Plan）。","traps":["只按RPN排序，漏掉高严重度(S)模式"],"memory":"RPN排序，但S值很高的过程无论如何都要改进（B）。"},{"id":84,"type":"概念","tag":"公理化设计","ch":"C10","stem":"在公理化设计中，\"独立公理\"也称为______，其含义是______。","options":[{"k":"A","t":"简化公理，信息含量最小化"},{"k":"B","t":"模块化公理，最大限度减少各功能要求间的\"耦合\""},{"k":"C","t":"简化公理，避免设计参数间的交互作用"},{"k":"D","t":"模块化公理，实现各子系统并行设计"}],"answer":["B"],"note":"独立公理（Independence Axiom）要求功能要求FR与设计参数DP之间保持独立性，尽量减少耦合，也称模块化公理","analysis":"**考点**：两条设计公理。\n**解题**：**独立公理（Independence Axiom）**：FR 与 DP 一一对应、尽量解耦 → 又称**模块化公理**，即\"最大限度减少功能要求间的耦合\"。\n**延伸**：另一条是**信息公理（Information Axiom）**：信息含量最小化（即简化/最简公理）。A、C、D 混淆了两条公理。","traps":["独立公理与信息公理的内容互相混淆"],"memory":"独立公理=模块化/去耦合；信息公理=信息含量最小化。"},{"id":85,"type":"多选","tag":"六西格玛与卓越绩效","ch":"C1","stem":"关于六西格玛和卓越绩效模式（Performance Excellence Model）之间的关系，正确的表述包括：","options":[{"k":"A","t":"六西格玛是实现组织卓越绩效的可操作性的手段"},{"k":"B","t":"通过采用卓越绩效准则的自评估，可以发现六西格玛的改进方向"},{"k":"C","t":"实施了卓越绩效模式，就没有必要实施六西格玛，因此不必再考虑六西格玛"},{"k":"D","t":"企业可以同时推进卓越绩效模式和六西格玛管理"}],"answer":["A","B","D"],"note":"","analysis":"- **A✓**：六西格玛以 DMAIC 等结构化方法落地改进，是卓越绩效\"结果导向\"的可操作手段。\n- **B✓**：波多里奇式自我评估属\"体检\"，体检发现薄弱环节即为六西格玛选题方向。\n- **C✗**：二者不是替代关系——卓越绩效是框架/导向，六西格玛是改进引擎，缺一不可。\n- **D✓**：可并行：卓越绩效搭体系，六西格玛做改善。","traps":["误选C\"实施了卓越绩效就不必六西格玛\"（替代关系错误）"],"memory":"卓越绩效是框架、六西格玛是引擎，可同时推进（ABD）。"},{"id":86,"type":"多选","tag":"六西格玛与ISO9000","ch":"C1","stem":"关于六西格玛和ISO 9000之间的关系，正确的表述包括：","options":[{"k":"A","t":"六西格玛是比ISO 9000要求更高的质量管理体系"},{"k":"B","t":"六西格玛项目的成果，要纳入ISO 9000管理体系"},{"k":"C","t":"质量要求高的企业可以实施六西格玛，质量要求不高的企业实施ISO 9000就可以了"},{"k":"D","t":"实施好ISO 9000，可以为实施六西格玛奠定基础"}],"answer":["B","D"],"note":"","analysis":"- **A✗**：六西格玛是**改进方法论**而非\"体系\"，不存在\"要求更高\"的层级比较；且质量要求高低与是否用六西格玛无必然关系（C 同样错）。\n- **B✓**：项目成果（改进后的流程、标准、制度）应文件化、纳入 ISO 9000 体系固化。\n- **D✓**：ISO 9000 提供了稳定流程基础，六西格玛在其上做突破性改进。","traps":["把六西格玛当成\"要求更高的体系\"、按质量高低分流企业"],"memory":"ISO9000打基础、六西格玛做突破，成果纳入体系（BD）。"},{"id":87,"type":"多选","tag":"精益库存观","ch":"C5","stem":"在精益思想中，\"库存是万恶之源\"，这句话的真正含义包括：","options":[{"k":"A","t":"库存占用了企业大量流动资金"},{"k":"B","t":"库存掩盖了生产中诸多问题和矛盾"},{"k":"C","t":"企业不该建库存"},{"k":"D","t":"库存越高，浪费越大"}],"answer":["A","B","D"],"note":"\"不该建库存\"是极端化误读，精益不反对必要库存，反对的是掩盖问题的过量库存","analysis":"- **B 是核心**：库存像水位，掩盖设备故障、缺料、质量波动、平衡差等问题（\"水位—礁石\"模型）。\n- **A✓ 占用资金、D✓ 浪费随库存量放大**（搬运、保管、呆滞风险等）。\n- **C✗**：\"不该建库存\"是极端误读，精益反对的是**掩盖问题的过量库存**，必要安全库存仍允许。","traps":["把\"库存是万恶之源\"极端化为\"不该建库存\""],"memory":"库存占用资金、掩盖问题；精益反的是过量库存，非全部库存。"},{"id":88,"type":"多选","tag":"平衡计分卡","ch":"C1","stem":"平衡计分卡力图平衡下述哪些方面？","options":[{"k":"A","t":"财务目标和非财务目标"},{"k":"B","t":"绩效考核和战略考核"},{"k":"C","t":"领先性指标和滞后性指标"},{"k":"D","t":"短期目标和长期目标"}],"answer":["A","C","D"],"note":"","analysis":"- **A✓** 财务↔非财务（顾客、内部流程、学习成长）；**C✓** 领先性（驱动）↔滞后性（结果）指标；**D✓** 短期↔长期。\n- **B✗**：BSC 的本质是\"**把战略转化为行动**\"，它平衡的不是\"绩效考核和战略考核\"这两个维度。\n- **扩展记忆**：BSC 四大平衡常考：财务与非财务、领先与滞后、短期与长期、内部与外部。","traps":["误选\"绩效考核和战略考核\"（BSC平衡的不是这个）"],"memory":"BSC平衡：财务/非财务、领先/滞后、短期/长期（ACD）。"},{"id":89,"type":"多选","tag":"黑带职责","ch":"C2","stem":"以下属于黑带职责的是：","options":[{"k":"A","t":"在倡导者的指导下，界定六西格玛项目"},{"k":"B","t":"指导团队使用有效的工具和方法"},{"k":"C","t":"为项目实施配备资源"},{"k":"D","t":"确认项目的财务收益"}],"answer":["A","B"],"note":"配备资源、确认财务收益是倡导者（Champion）/管理层职责","analysis":"- **A✓** 在倡导者（Champion）指导下界定项目；**B✓** 指导团队用工具方法、开展培训辅导。\n- **C✗ 配备资源、D✗ 确认财务收益**——这是**倡导者/管理层**职责（资源保障、财务核实），黑带只做财务收益的测算支撑。","traps":["把配备资源、确认财务收益算成黑带职责"],"memory":"黑带=执行+辅导；倡导者=资源+财务把关（AB）。"},{"id":90,"type":"多选","tag":"改进机会发现","ch":"C3","stem":"在实施六西格玛的过程中，发现改进机会是十分重要的。发现改进机会可能使用的方法，正确的描述是：","options":[{"k":"A","t":"水平对比"},{"k":"B","t":"平衡计分卡"},{"k":"C","t":"顾客调查"},{"k":"D","t":"力场分析"}],"answer":["A","B","C"],"note":"力场分析用于变革管理/方案分析，不是发现改进机会的方法","analysis":"- **A✓ 水平对比（标杆）**、**B✓ 平衡计分卡**（从战略差距找改进点）、**C✓ 顾客调查**（倾听VOC）。\n- **D✗ 力场分析**：识别驱动力/制约力，用于**变革管理、方案选择**，不是发现改进机会。\n- **同类辨析**：发现机会→VOC/标杆/平衡计分卡；分析方案→力场分析；排列原因→因果图等。","traps":["把力场分析当成发现改进机会的工具"],"memory":"发现机会：水平对比+BSC+顾客调查；力场分析管变革推进。"},{"id":91,"type":"多选","tag":"SMART原则","ch":"C3","stem":"在制定项目目标时，要求目标符合SMART原则，其中的R（relevant）是指：","options":[{"k":"A","t":"目标与企业的战略相关"},{"k":"B","t":"目标与顾客的关键需求相关"},{"k":"C","t":"目标与实现目标的时间相关"},{"k":"D","t":"目标与项目所涉及的部门相关"}],"answer":["A","B"],"note":"","analysis":"- **R=Relevant**：目标须与**企业战略**、**顾客关键需求（CTQ）**相关联。\n- **C✗ 是 T**（Time-bound，时限性）；**D✗** 部门相关不是 R 的标准内涵。","traps":["SMART中R与T混淆（时间相关是Time-bound）"],"memory":"R=Relevant：与企业战略、顾客关键需求相关（AB）。"},{"id":92,"type":"多选","tag":"魅力质量","ch":"C4","stem":"为了实现魅力质量，需要做的事情有：","options":[{"k":"A","t":"提高产品合格率"},{"k":"B","t":"挖掘顾客的潜在需求"},{"k":"C","t":"改进产品保修服务"},{"k":"D","t":"利用技术创新实现产品的新功能"}],"answer":["B","D"],"note":"魅力质量=顾客意想不到的惊喜（潜在需求+创新功能），提高合格率/保修属于基本质量改善","analysis":"- **B✓ 挖掘潜在需求**、**D✓ 技术创新实现新功能**——魅力质量=顾客意想不到的惊喜。\n- **A✗ 提高合格率、C✗ 改进保修**——属**基本质量**（理所当然）或一元质量的改善。","traps":["把提高合格率/改进保修当成魅力质量"],"memory":"魅力质量=潜在需求+创新惊喜（BD）；合格率属基本/一元。"},{"id":93,"type":"多选","tag":"净现值NPV","ch":"C3","stem":"当用净现值（NPV）评价六西格玛项目经济性时，下述哪些说法是正确的？","options":[{"k":"A","t":"净现值<0，六西格玛项目的经济性不好，项目不可行"},{"k":"B","t":"净现值>0，六西格玛项目的经济性不好，项目不可行"},{"k":"C","t":"净现值是指当前企业拥有的现金流"},{"k":"D","t":"净现值的计算与折现率有关"}],"answer":["A","D"],"note":"NPV>0 表示经济性好（B 说法错误），NPV 是未来现金流折现之和而非当前持有现金","analysis":"- **A✓**：NPV<0，收益现值不抵投入，经济性差、不可行。\n- **B✗**：NPV>0 说明**收益现值大于投入、经济性好**，说\"经济性不好\"错误。\n- **C✗**：NPV 是**未来各期净现金流按折现率折到现值的总和**，不是当前持有的现金。\n- **D✓**：折现率（资金成本）是 NPV 计算的核心参数。","traps":["以为NPV>0经济性不好","把NPV当成当前持有的现金"],"memory":"NPV=未来净现金流折现之和，与折现率有关；<0才不可行（AD）。"},{"id":94,"type":"多选","tag":"团队激励","ch":"C2","stem":"有效的激励对六西格玛项目团队的成功是十分必要的。下述哪些技巧可用于团队激励？","options":[{"k":"A","t":"明确阐述项目的目的意义，让团队成员认识到他们的工作是重要且有意义的"},{"k":"B","t":"鼓励团队成员主动分析问题，为他们提供展示自己才能的机会"},{"k":"C","t":"分享团队取得的成绩和进展，使团队获得成就感"},{"k":"D","t":"通过目标管理，让团队成员按计划自主管理"}],"answer":["A","B","C","D"],"note":"","analysis":"- A 意义感（让成员认识工作价值）、B 展示机会（参与分析）、C 成就感（分享成果进展）、D 自主管理（目标管理授权）。","traps":["漏选D——按计划自主管理也是激励手段"],"memory":"意义感、展示机会、成就感、自主管理，全选ABCD。"},{"id":95,"type":"多选","tag":"团队震荡期","ch":"C2","stem":"下列属于团队发展震荡阶段的特点的是：","options":[{"k":"A","t":"团队成员以个体为思考，尚未形成与他人合作协商的意愿"},{"k":"B","t":"团队成员对自己的角色和任务感到忐忑不安"},{"k":"C","t":"可能有成员退出团队"},{"k":"D","t":"团队对实现目标的最佳方案存在分歧，甚至对总目标本身也有不同看法"}],"answer":["A","C","D"],"note":"B\"角色任务忐忑不安\"是形成期（组建期）特点；震荡期的核心是分歧、冲突、个体化","analysis":"- **A✓ 个体化思考、缺乏协作意愿；C✓ 可能有人退出；D✓ 对目标与方案分歧、冲突**。\n- **B✗**：\"角色任务忐忑不安、依赖、试探\"是**形成期（组建期）**特点。","traps":["把\"忐忑不安\"（形成期）当成震荡期特点"],"memory":"形成试探、震荡分歧、规范共识、执行产出（ACD）。"},{"id":96,"type":"多选","tag":"高效团队建设","ch":"C2","stem":"成功的团队是需要建设的，作为六西格玛黑带，下述哪些事项在组建高效团队时是必须做到的？","options":[{"k":"A","t":"向每一位团队成员阐述团队的目标以及对个人的任务要求"},{"k":"B","t":"与团队一起建立团队规则"},{"k":"C","t":"为团队成员提供必要培训"},{"k":"D","t":"给团队赋权"}],"answer":["A","B","C","D"],"note":"","analysis":"- 目标任务明确（A）、共立规则（B）、必要培训（C）、赋权（D）——四项都属黑带建队的\"必须做到\"。","traps":["漏选培训或赋权"],"memory":"建队四件事：讲目标、立规则、给培训、要赋权（ABCD）。"},{"id":97,"type":"多选","tag":"关联图应用","ch":"C5","stem":"关于关联图的应用，下列说法正确的是：","options":[{"k":"A","t":"可以用于界定六西格玛项目的范围和边界"},{"k":"B","t":"当影响因素之间关系复杂、相互缠绕时，进行原因分析"},{"k":"C","t":"制定项目计划"},{"k":"D","t":"从复杂的影响关系中确定关键影响因素"}],"answer":["A","B","D"],"note":"","analysis":"- **B✓** 多因素相互缠绕时做原因分析；**D✓** 从复杂关系中理出关键因素（主因）；**A✓** 帮助界定改进主题/范围。\n- **C✗** 制定项目计划——那是网络图/PDPC/甘特图的功能。\n- **⚠️ 提示**：A 项\"界定项目范围和边界\"在部分教材中表述为系统图/SIPOC 的功能，官方以 ABD 为准，考试按此记忆即可；若遇同类题以\"关联图=理关系、找关键\"为判断核心。","traps":["把\"制定项目计划\"当成关联图用途"],"memory":"关联图理复杂关系、找关键因素，不管排计划（ABD）。"},{"id":98,"type":"多选","tag":"PDPC与网络图","ch":"C5","stem":"有关过程决策程序图（PDPC）和网络计划技术之间的关系，下面描述正确的是：","options":[{"k":"A","t":"两种方法皆可应用于制定项目计划"},{"k":"B","t":"PDPC图和双代号网络图可以通用"},{"k":"C","t":"PDPC主要应用于未来行动方案不确定的情形，网络图主要应用于活动关系确定的情形"},{"k":"D","t":"PDPC主要用于辅助过程决策，网络图主要用于活动计划安排"}],"answer":["A","C","D"],"note":"","analysis":"- **A✓** 两者都能用于制定项目计划；**C✓** PDPC 用于**不确定/多变的未来行动方案**（应对意外），网络图用于**活动关系确定**的计划（关键路径、时差）；**D✓** PDPC 辅助决策、网络图安排活动进度。\n- **B✗**\"可以通用\"错误——应用前提不同，不可互换。","traps":["以为PDPC图与双代号网络图可以通用"],"memory":"PDPC管不确定情形，网络图管确定关系；都能用于计划（ACD）。"},{"id":99,"type":"多选","tag":"KANO基本质量","ch":"C4","stem":"KANO模型中把质量特性分为基本质量、一元质量和魅力质量。关于基本质量的描述，下列正确的是：","options":[{"k":"A","t":"基本质量特性差，顾客会非常不满意"},{"k":"B","t":"基本质量特性非常好，顾客也不会表现得特别满意"},{"k":"C","t":"基本质量特性非常好，顾客一定非常满意"},{"k":"D","t":"基本质量特性与产品销量往往成正比"}],"answer":["A","B"],"note":"基本质量（当然质量）是\"理所当然\"的——做差必不满，做好无惊喜","analysis":"- **A✓ 做差必严重不满；B✓ 做得再好也无惊喜（理所当然）**。\n- **C✗** 正好相反；**D✗** 基本质量与销量**不是正比关系**（满意-绩效双因素思想）。","traps":["以为基本质量做得非常好顾客就会非常满意"],"memory":"必备质量：做差必不满，做好无惊喜（AB）。"},{"id":100,"type":"多选","tag":"Y分解","ch":"C4","stem":"在实施六西格玛项目的过程中，需要将项目的关键质量特性（大Y）分解成y₁，y₂，…，yₖ等\"小y\"。关于如何进行分解，下面说法正确的是：","options":[{"k":"A","t":"按部门进行分解，来自不同部门的团队成员承担不同的\"小y\""},{"k":"B","t":"可以采用树图进行分解"},{"k":"C","t":"分解时要考虑\"y\"之间的影响关系"},{"k":"D","t":"分解时要考虑如何测量\"小y\""}],"answer":["B","C","D"],"note":"","analysis":"- **B✓ 树图（CTQ 树）分解**；**C✓** 考虑小 y 之间相互影响；**D✓** 同步考虑每个小 y 如何测量。\n- **A✗**：Y 分解按**流程步骤/顾客需求/CTQ 逻辑**展开，**不是按部门分派任务**——那是项目分工，不是 Y 分解。","traps":["把\"按部门分派小y\"当成Y分解（那是任务分工）"],"memory":"Y分解用树图按逻辑展开，兼顾测量与相互影响（BCD）。"},{"id":101,"type":"多选","tag":"问题陈述误区","ch":"C3","stem":"在项目的问题陈述时，以下哪些说法是不正确的？","options":[{"k":"A","t":"问题是客观的，通过描述缺陷，对问题产生的原因进行客观的判断"},{"k":"B","t":"问题是具体的，要将影响流程改进的部门和人员的责任具体化"},{"k":"C","t":"问题是可控的，所以要给出明确的解决方案"},{"k":"D","t":"问题是可测量的，使用量化的语言说明问题有多严重、产生了什么影响"}],"answer":["A","B","C"],"note":"问题陈述只描述现象（5W1H量化），不判断原因（A）、不追究责任（B）、不给解决方案（C）","analysis":"- 问题陈述**只客观描述现象**：用 5W1H 量化\"有多严重、什么影响\"（D 正确）。\n- **A✗** 不可在陈述中**判断原因**；**B✗** 不可**追究部门/人员责任**；**C✗** 不可**给出解决方案**（那是改进阶段的事）。","traps":["问题陈述中判原因、追责任、给方案"],"memory":"问题陈述三不：不判因、不追责、不开方（ABC为不正确项）。"},{"id":102,"type":"多选","tag":"测量计划","ch":"C7","stem":"某黑带确定了影响结果的关键过程及输入变量KPIV后开始制定测量计划，此时需考虑的事项有：","options":[{"k":"A","t":"对测量项进行作业定义"},{"k":"B","t":"考虑抽样频次、样本量"},{"k":"C","t":"测量系统分析"},{"k":"D","t":"潜在失效模式分析"}],"answer":["A","B","C"],"note":"","analysis":"- KPIV＝Key Process Input Variable，关键过程输入变量。\n- **A✓ 作业定义**（操作化定义测量项）、**B✓ 抽样频次与样本量**、**C✓ 测量系统分析 MSA**（GR&R 等）。\n- **D✗ 潜在失效模式分析（FMEA）**：属**风险分析/设计或流程改进**阶段工具，不是制定测量计划时的考虑事项。","traps":["把FMEA混入测量计划事项"],"memory":"测量计划=作业定义+抽样频次样本量+MSA（ABC）。"},{"id":103,"type":"多选","tag":"测量系统重复性","ch":"C7","stem":"对于测量系统重复性的描述正确的是：","options":[{"k":"A","t":"是指同一个操作者采用一种量具，多次重复测量同一零件的同一特征时所获得的测量值的变差"},{"k":"B","t":"是指由于不同操作者，采用相同量具，测量同一零件的同一特征所得测量结果的变差"},{"k":"C","t":"是指同一个操作者采用一种量具，多次用不同方法重复测量同一零件的同一特征时所获得的测量值的变差"},{"k":"D","t":"测量系统重复性差往往和测量仪器本身精度差有关"}],"answer":["A","D"],"note":"B描述的是再现性；C\"不同方法\"不是重复性","analysis":"- A 对：同一操作者＋同一量具＋重复测同一零件同一特征 = 重复性（定义原文）。\n- B 是**再现性**（不同操作者）——这是最高频陷阱。\n- C 错：\"不同方法\"已脱离重复性\"相同条件下重复\"的定义。\n- D 对：重复性差通常源于仪器本身精度/分辨率/磨损，与仪器密切相关。","traps":["不同操作者的变差（再现性）误当重复性"],"memory":"同一人同一具同一件=重复性；重复性差先查仪器（AD）。"},{"id":104,"type":"多选","tag":"校准与MSA","ch":"C7","stem":"某六西格玛团队在测量阶段对某关键检测设备进行测量系统分析前，计量部门的人说，该设备定期进行校准，不必进行测量系统分析。有关设备校准和测量系统分析之间的关系，正确的是：","options":[{"k":"A","t":"定期校准确实可以保证测量系统的有效性，因此不必专门进行测量系统分析"},{"k":"B","t":"校准可以消除或减少测量系统的偏倚（bias）"},{"k":"C","t":"定期进行GRR研究一般可以代替定期校准"},{"k":"D","t":"定期进行GRR研究不能代替定期校准"}],"answer":["B","D"],"note":"校准解决偏倚/溯源性，MSA（GRR）评估重复性再现性等能力，两者互补不可替代","analysis":"- B 对：校准可消除/减少**偏倚（bias）**并保证溯源性。\n\n- 选项A原话为\"定期校准确实可以保证……\"。","traps":["以为定期校准可以替代GRR研究"],"memory":"校准管偏倚溯源性，GRR管重复再现性，互补不可替代（BD）。"},{"id":105,"type":"多选","tag":"F检验前提","ch":"C9","stem":"某工程师想验证模具改进前后生产的注塑产品的关键尺寸的方差是否发生了变化，在对改进前后收集样本数据后，准备用F检验。请问，在F检验前，需要对数据进行哪些验证？","options":[{"k":"A","t":"改进前后数据都能满足独立性"},{"k":"B","t":"改进前后数据的均值必须相同"},{"k":"C","t":"改进前后数据都符合正态分布"},{"k":"D","t":"改进前后数据的方差相同"}],"answer":["A","C"],"note":"两方差比较的F检验要求独立+正态；不要求均值相同、方差相等正是检验目的","analysis":"- 前提仅两条：**独立 + 正态**。\n- B 错：均值是否相同不是前提（那是 t 检验的问题）。\n- D 错：**方差相等正是 H0**，不能拿要检验的东西当前提。","traps":["把\"均值相同\"\"方差相同\"当成F检验前提"],"memory":"两方差F检验前提只有独立+正态；方差相等正是被检的H0（AC）。"},{"id":106,"type":"多选","tag":"双比率比较","ch":"C9","stem":"对生产部中两条同类型生产线的质量抽检发现：一号生产线生产的800个产品中共有26个不良品，二号生产线生产的1200个产品中共有48个不良品。为了比较这两条生产线的优劣，可以运用的量化分析方法是：","options":[{"k":"A","t":"双样本t检验"},{"k":"B","t":"双样本比率检验"},{"k":"C","t":"双样本非参数Mann-Whitney检验"},{"k":"D","t":"列联表卡方检验"}],"answer":["B","D"],"note":"不良品率比较→双比率检验或列联表卡方检验；数据是计数/比率不是连续测量值","analysis":"- 数据是**计数/比率**（不良品数），不是连续测量值 → 排除 A（双样本 t）、C（Mann-Whitney 针对连续/有序）。\n- B 双比率检验、D 列联表卡方检验（2×2）均可，两者在该情形等价。（按题目数据：一号不良率 26/800≈3.3%，二号 48/1200=4.0%。）","traps":["对不良品计数数据误用t检验/Mann-Whitney"],"memory":"比率/计数比较→双比率检验或2×2卡方（BD）。"},{"id":107,"type":"多选","tag":"关键因子筛选","ch":"C9","stem":"若需要从多个可能的影响因子中筛选少数关键因子，可选的工具有：","options":[{"k":"A","t":"相关分析"},{"k":"B","t":"回归分析"},{"k":"C","t":"控制图"},{"k":"D","t":"部分因子试验设计"}],"answer":["A","B","D"],"note":"","analysis":"- 相关分析（初筛相关性）、回归分析（显著性检验/逐步筛选）、部分因子设计（DOE 筛选）都行。\n- C 控制图是**过程监控**工具，不是筛选因子工具。","traps":["把控制图当成筛选因子的工具"],"memory":"筛因子：相关、回归、部分因子DOE；控制图只管监控（ABD）。"},{"id":108,"type":"多选","tag":"残差分析目的","ch":"C9","stem":"在进行回归分析时，要对残差进行分析和诊断。这样做的目的是：","options":[{"k":"A","t":"通过残差的分布形态判断是否还存在其他潜在的关键X"},{"k":"B","t":"通过残差分布的随机性，判断所选择的回归模型是否合适"},{"k":"C","t":"通过残差的分布，判断X对Y的影响是否显著"},{"k":"D","t":"通过残差的分布，判断是否有远离模型的异常观测值存在"}],"answer":["A","B","D"],"note":"X对Y是否显著由回归系数检验判断，不是残差分析的目的","analysis":"- 残差诊断看三件事：是否还有规律（漏了关键 X）、模型是否合适、有无异常观测值。\n- C 错：X 对 Y 是否显著由**回归系数的 t/F 检验**判断，与残差分析无关。","traps":["用残差分析判断X对Y是否显著"],"memory":"残差三查：漏X？模型合适？异常值？显著性看系数检验（ABD）。"},{"id":109,"type":"多选","tag":"因子筛选设计","ch":"C10","stem":"某六西格玛项目团队面临一个试验设计问题：影响因素初步估计在10个以上，需要筛选出关键的影响因素，可采用的试验设计方法有：","options":[{"k":"A","t":"部分因子试验设计"},{"k":"B","t":"全因子试验设计"},{"k":"C","t":"响应曲面模型"},{"k":"D","t":"Plackett-Burman设计"}],"answer":["A","D"],"note":"因子多（10+）时用低分辨率部分因子或Plackett-Burman筛选；全因子/RSM在筛选阶段不现实","analysis":"- 因子多时用低分辨率部分因子或 **Plackett-Burman**。\n- B 全因子 2¹⁰=1024 次不现实；C 响应曲面（RSM）是**优化阶段**工具，不用于筛选。","traps":["因子10个以上仍考虑全因子/RSM"],"memory":"筛选阶段：部分因子设计+Plackett-Burman（AD）。"},{"id":110,"type":"多选","tag":"试验效力提高","ch":"C10","stem":"在进行试验设计时，由于众多不可控因素的影响，可能导致模型误差（MSE）较大。为了提高模型的效力（power），可以采用哪些方法？","options":[{"k":"A","t":"增加仿行（replicate）次数"},{"k":"B","t":"尽可能进行区组化（block）设计"},{"k":"C","t":"试验顺序随机化"},{"k":"D","t":"增加中心点次数"}],"answer":["A","B","D"],"note":"增加仿行直接降低MSE估计不确定性、区组化把已知噪声纳入模型减小残差MSE、中心点提供纯误差估计自由度（间接提高power）并检测弯曲；随机化消除系统偏差保证有效性，但不减小MSE（不选C）","analysis":"- 增加仿行→减小 MSE；区组化→隔离已知变异源；增加中心点→估计纯误差/检验曲率。\n- C 随机化消除系统偏差、保证独立性，但**不直接降低 MSE/提高 power**（官方解析口径）。","traps":["以为随机化能提高power（它只保有效性）"],"memory":"仿行、区组、中心点降MSE提效力；随机化防偏不降MSE（ABD）。"},{"id":111,"type":"多选","tag":"控制阶段活动","ch":"C8","stem":"在以下各项中，哪些内容是在控制（control）阶段实施的？","options":[{"k":"A","t":"对改进方案进行验证"},{"k":"B","t":"制定应变方案"},{"k":"C","t":"确定关键控制点、控制参数和控制方法"},{"k":"D","t":"形成新的程序文件或作业标准"}],"answer":["B","C","D"],"note":"控制阶段核心动作可记为\"控制三件套\"——定控制点/方法、写标准文件、备应变方案。验证方案属于I阶段末尾的\"pilot验证\"。\n验证改进方案是改进阶段（I）的工作","analysis":"- 控制阶段：应变方案、关键控制点/参数/方法、固化程序文件与作业标准。\n- A 验证改进方案是**改进阶段（I）**的活。","traps":["把\"验证改进方案\"放进控制阶段（那是I阶段）"],"memory":"控制三件套：定控制点/方法、固化文件、备应变方案（BCD）。"},{"id":112,"type":"多选","tag":"正交子集选择","ch":"C10","stem":"某工程师需要对3个因子做试验设计，由于试验成本很高，只能进行4次试验，找出关键主因子（不考虑2阶交互作用），下表给出的是一个2³全因子设计，序号代表试验点（1:-1,-1,-1；2:1,-1,-1；3:-1,1,-1；4:1,1,-1；5:-1,-1,1；6:1,-1,1；7:-1,1,1；8:1,1,1），请问，它可以从中选择哪4次试验？","options":[{"k":"A","t":"1, 4, 6, 7"},{"k":"B","t":"1, 3, 5, 7"},{"k":"C","t":"2, 3, 5, 8"},{"k":"D","t":"2, 4, 6, 8"}],"answer":["A","C"],"note":"快速验证法——将选出的4行写成矩阵，任意两列内积为0即正交。1,4,6,7对应的生成元关系为I=-ABC（分辨率III的半分式）；2,3,5,8是I=ABC的分式，二者互补，均满足。\n选出的4点须构成正交子集（A、B、C列两两正交）——1,4,6,7与2,3,5,8都满足，是2³的1/2分式（分辨率III）","analysis":"用编码 ±1 检查 A、B、C 三列两两内积是否为 0：\n- 方案 A {1,4,6,7}：A·B=0、A·C=0、B·C=0 ✓（三列乘积恒为 −1，即 I=−ABC）\n- 方案 C {2,3,5,8}：同样满足 ✓（三列乘积恒为 +1，I=ABC；与方案 A 互为互补分式，分辨率 III）\n- 方案 B {1,3,5,7}：A 列全为 −1 → 不正交 ✗；方案 D {2,4,6,8}：A 列全为 1 → 不正交 ✗\n- **速记技巧**：4 点里任一列不能全同号，否则该列无信息。","traps":["任选4行而不验证列正交性"],"memory":"任两列内积为0才正交：1,4,6,7与2,3,5,8均可行（AC）。"},{"id":113,"type":"多选","tag":"回归模型改进","ch":"C9","stem":"DOE分析过程中，发现其因子或因子的交互作用中有不显著的项，则需要改进模型，改进模型后，模型回归效果度量指标变化如下表（S：12.2392→11.9476减小；R-Sq：99.46%→99.31%减小；R-Sq(调整)：99.22%→99.26%增大；R-Sq(预测)：89.50%→99.18%增大；PRESS：1549.8→984.2减小），则对于结果判断正确的是：","options":[{"k":"A","t":"模型改进前后S减小，说明模型改进后观测值与模型拟合值之间差值减小，模型改进有效"},{"k":"B","t":"模型改进前后R-Sq减小，说明模型拟合的能力变差了，模型改进无效"},{"k":"C","t":"模型改进前后R-Sq(调整)变大，且与R-Sq差异变小，说明模型拟合能力变好，模型改进有效"},{"k":"D","t":"模型改进前后R-Sq(预测)变大，PRESS变小，说明改进模型后模型中的异常点减少或影响变小，模型预测结果可信度增大，改进模型有效"}],"answer":["A","C","D"],"note":"记忆口诀\"调整升、预测升、PRESS降→改进有效\"。R-Sq本身只会随项数增加而增大（或删项而微降），不能单独判断模型好坏，所以B的逻辑是错的。\n剔除不显著项后R-Sq略降是正常的（少了一项），关键是R-Sq(调整)、R-Sq(预测)升、PRESS降——模型更简洁更稳健","analysis":"- 剔除不显著项后：**S↓**（拟合误差变小，A 对）；**R-Sq 略降属正常**（项变少，不能说变差，B 错）；**R-Sq(调整)↑**且与 R-Sq 差距缩小→更简洁有效（C 对）；**R-Sq(预测)↑、PRESS↓**→预测可信度增大（D 对）。\n- 记忆：改进模型看**调整/预测 R² 与 PRESS**，别被 R-Sq 表面下降骗到。","traps":["R-Sq略降就判\"模型改进无效\""],"memory":"改进有效看三升一降：调整R²↑、预测R²↑、PRESS↓、S↓（ACD）。"},{"id":114,"type":"多选","tag":"缺陷计数控制图","ch":"C8","stem":"项目小组每隔两小时收集4件B型车门，准备监控B型车门喷涂缺陷数，且已知4件产品上的缺陷平均数在5个以上，他们可以考虑使用以下哪种控制图？","options":[{"k":"A","t":"u控制图"},{"k":"B","t":"np控制图"},{"k":"C","t":"c控制图"},{"k":"D","t":"p控制图"}],"answer":["A","C"],"note":"c图适用于等面积/等机会的缺陷计数（每次固定4件→检验单位恒定）；u图为单位缺陷数，样本量恒定时与c图判定等价。np/p图是计件（合格/不合格），不适用于缺陷数。\n监控喷涂缺陷数（计点数据）→c图；样本量恒定时u图与c图等价，亦可使用","analysis":"- 监控**缺陷数（计点）**→ **c 图**；样本量恒定时 **u 图与 c 图等价**（u=c/n）→ A、C 均可。\n- B np 图、D p 图针对**计件（不良品数/率）**，不适用于缺陷计数。","traps":["用计件图（np/p）监控缺陷数"],"memory":"缺陷数计点→c图；样本量恒定时u图等价（AC）。"},{"id":115,"type":"多选","tag":"CUSUM控制图","ch":"C8","stem":"下面关于累积和控制图（CUSUM）的描述，正确的是：","options":[{"k":"A","t":"累积和控制图对发现过程的小偏移更有效"},{"k":"B","t":"累积和控制图对发现过程的变异增大更有效"},{"k":"C","t":"累积和控制图可以和常规控制图联合使用"},{"k":"D","t":"和常规控制图联合使用时，增加累积和控制图后并不会增大原来犯第一类错误的概率"}],"answer":["A","C"],"note":"D选项是常见干扰项——联合使用多张图相当于多重检验，犯α错误的概率会增大（类似多重比较问题）。CUSUM只对均值偏移敏感，监控变异增大应使用EWMA-S或S²图。\nCUSUM对均值小偏移敏感（累积信息）；变异增大是R/S图等关注的；联合使用会增加第一类错误概率","analysis":"- CUSUM 对**小偏移**更敏感（累积信息）；联合使用可以，但会**增大第一类错误概率**（D 错）。\n- B 错：变异增大是 R/S 图等关注的对象。","traps":["以为CUSUM对变异增大敏感","以为联合使用不增大第一类错误"],"memory":"CUSUM抓均值小偏移；联合用图会增大α风险（AC）。"},{"id":116,"type":"多选","tag":"受控与能力","ch":"C8","stem":"某电子元器件厂对产品生产过程采用X̄-R控制图进行过程控制。每1个小时在现场抽取样本大小为5的子组。控制图显示受控，但是在所抽样的25组产品中发现总计居然有10个产品落入公差限外，针对这一现象，可能正确的判断是：","options":[{"k":"A","t":"X̄-R控制图不好，应采用X̄-S控制图"},{"k":"B","t":"该过程能力不足（Cp、Cpk低）"},{"k":"C","t":"抽样间隔过长，应该改为半小时抽样一次"},{"k":"D","t":"应先对该过程进行优化和改进，然后再进行控制"}],"answer":["B","D"],"note":"经典考点\"受控≠有能力\"。25组×5=125件中有10件超差，不良率≈8%，说明Cpk明显不足。正确路径：先改进过程（降低变异或调整均值）→能力达标后→再用控制图维持。\n受控≠有能力（受控但Cpk低，缺陷仍多）——先改进过程能力，再谈控制","analysis":"- 控制图受控但 25 组里 10 个超差 → **过程能力不足（Cp/Cpk 低）**，应**先优化改进再控制**。\n- A 换 X̄-S 图不解决能力问题；C 缩短抽样间隔同样不能减少缺陷——都是干扰项。","traps":["受控却超差时先换控制图/缩短抽样间隔"],"memory":"受控≠有能力：25组10件超差=能力不足，先改进再控制（BD）。"},{"id":117,"type":"多选","tag":"VSM现状图","ch":"C5","stem":"在某些项目中需要绘制价值流图（VSM），最先绘制的是价值流现状图，请问下述描述正确的选项是哪些？","options":[{"k":"A","t":"绘制价值流现状图需要项目小组成员共同讨论确定"},{"k":"B","t":"绘制价值流现状图首先要确定一个产品或产品系列"},{"k":"C","t":"绘制价值流现状图只需要确定从供应商到顾客的物料流"},{"k":"D","t":"绘制价值流现状图要仔细讨论，但一般不需要到现场即可完成"}],"answer":["A","B"],"note":"VSM = 物料流 + 信息流（C只提物料流，遗漏信息流）。绘制必须\"走一遍流程\"（Gemba Walk），D说不需到现场明显错误。\nVSM含物料流+信息流（C错）；必须到现场实地观察（D错）","analysis":"- 团队共同讨论、先确定产品/产品系列，均对。\n- C 错：VSM 含**物料流＋信息流**两条线；D 错：必须**到现场实地观察**，不能只在会议室。","traps":["VSM只画物料流、不到现场"],"memory":"VSM=物料流+信息流，必须现场实地绘制（AB）。"},{"id":118,"type":"多选","tag":"参数设计","ch":"C10","stem":"在三次设计中，下列有关参数设计的描述正确的是：","options":[{"k":"A","t":"参数设计可以应用于六西格玛设计的优化阶段"},{"k":"B","t":"试验设计技术，尤其是响应曲面分析是参数设计的一个重要方法"},{"k":"C","t":"参数设计的目的是减少质量损失"},{"k":"D","t":"参数设计的目的是筛选出关键的参数"}],"answer":["A","B"],"note":"三次设计区分记忆——系统设计（选结构/筛因子）→参数设计（调水平/求稳健）→容差设计（收公差/降损失）。D\"筛选关键参数\"属于系统设计阶段。\n官方答案为AB——参数设计的直接目的是确定可控因子最优水平组合、使输出对噪声不敏感（稳健性），通过缩小波动最终降低质量损失；若按广义理解C（减少质量损失）也可视为最终效果，属争议项，考试从众选AB；D\"筛选参数\"属于系统设计/筛选阶段","analysis":"- 参数设计 = 确定可控因子最优水平、使输出**对噪声不敏感（稳健性）**；可用于六西格玛设计优化阶段；RSM 是重要手段。\n- C 错：\"减少质量损失\"主要是**容差设计**的目标；D 错：\"筛选参数\"是**系统设计/筛选阶段**的事。","traps":["把\"筛选关键参数\"当成参数设计的目的","C\"减少质量损失\"与容差设计目标混淆（争议项，从官方AB）"],"memory":"参数设计求稳健（对噪声不敏感）；筛选参数属系统设计（AB）。"},{"id":119,"type":"多选","tag":"并行工程","ch":"C10","stem":"下列有关并行工程的描述正确的是：","options":[{"k":"A","t":"并行工程是指产品设计和工艺设计尽量并行和集成"},{"k":"B","t":"并行工程采用跨职能的团队"},{"k":"C","t":"并行工程可以大幅度地缩短开发周期"},{"k":"D","t":"并行工程可以将很多质量问题在设计阶段解决"}],"answer":["A","B","C","D"],"note":"并行工程四大特征直接对应四个选项，属于送分题，全选即可。","analysis":"**解析**：并行工程（Concurrent Engineering）的核心特征 = ①产品设计与工艺设计**并行、集成**（A）；②组建**跨职能团队**（B）；③**大幅缩短开发周期**（C）；④把大量质量问题**消灭在设计阶段**（D）——四项均为教材所述并行工程的特征/效益，全选。","traps":["漏选任一并行工程特征"],"memory":"并行工程四大特征：并行集成、跨职能、缩周期、早解决问题（ABCD）。"},{"id":120,"type":"多选","tag":"TRIZ理论","ch":"C10","stem":"有关TRIZ理论与方法，请选择下列正确的说法：","options":[{"k":"A","t":"TRIZ方法的提出源于以下认识：大量发明面临的基本问题和矛盾（系统冲突和物理矛盾）是相同的，只是技术领域不同而已"},{"k":"B","t":"按照TRIZ的基本观点，对同一问题的解决可能有多个不同的方案，方案的难易及可能性与对问题的描述方法息息相关"},{"k":"C","t":"TRIZ认为，发明可以视为系统冲突的解决过程"},{"k":"D","t":"TRIZ理论认为，对于技术系统而言，重要的不在于系统本身，而在于如何更科学地实现功能"}],"answer":["A","B","C","D"],"note":"TRIZ四句话分别对应其核心思想——矛盾的普遍性(A)、问题描述决定解的路径(B)、发明=解决冲突(C)、功能导向而非结构导向(D)。全选。","analysis":"","traps":["误以为四句话中有错误说法"],"memory":"TRIZ核心：矛盾普遍、描述定解、发明=解冲突、功能为本（ABCD）。"}],"tips":["## 总复习提示（本卷高频考点）\n1. **MSA 判读三连**（题44/45/49）：R&R 比例判据 10%/30%；GRR 的 Xbar 失控是**好事**；线性/偏倚看**回归斜率和均值检验的 P 值**。\n2. **过程能力诊断**（题51/53）：Cp、Pp、Cpm 三者的口径差异；**Cp≫Pp → 自相关**。\n3. **检验方法选择**（题56/59/60）：相关≠因果；符号检验 vs Wilcoxon（单样本）vs Mann-Whitney（两样本）；ANOVA 验证**各组**正态 + 方差齐性。","## 复习速记表\n\n| 题号 | 一句话考点 | 答案 |\n|---|---|---|\n| 71 | 总次数=2^k×重复+中心点 | B |\n| 72 | 设备限压→CCF（α=1 贴表面） | C |\n| 73 | 别名由生成元/定义关系决定 | C |\n| 74 | 层级原则：交互显著→主效应必留 | B |\n| 75 | 报警灯=防错，非 5S | B |\n| 76 | 合理子组：组内仅随机变异 | B |\n| 77 | 固定区间事件数→c 图 | C |\n| 78 | n≥6 用 X̄-S 不用 R | B |\n| 79 | 恒 n 时 np 与 p 等价 | A |\n| 80 | 变 n 计件→p 图 | C |\n| 81 | QFD 关系矩阵→回归 | C |\n| 82 | 容差设计=质量损失最小 | B |\n| 83 | RPN 排序但 S 高必改 | B |\n| 84 | 独立公理=模块化/去耦合 | B |","### 考前速记（这 18 题的共性陷阱）\n1. **重复性=同一人同一具；再现性=不同人**（103）。\n2. **校准管偏倚，GRR 管重复性/再现性，互不替代**（104）。\n3. **F 检验前提=独立+正态；方差相等是被检验的 H0**（105）。\n4. **比率/计数比较→双比率或卡方；连续才用 t/Mann-Whitney**（106）。\n5. **残差不判显著性、不判拟合好坏，只判：漏 X？不合适？有异常？**（108）。\n6. **筛选阶段：部分因子/PB；优化阶段：RSM**（109、110）。\n7. **改进模型看 S↓、调整/预测 R²↑、PRESS↓，R-Sq 略降正常**（113）。\n8. **缺陷数→c 图/u 图（np/p 是计件）；CUSUM 抓小偏移但增第一类错误**（114、115）。\n9. **受控≠有能力：先改进能力，再谈控制**（116）。\n10. **VSM 要现场、含信息流；参数设计=稳健性；并行工程/TRIZ 四选全对**（117–120）。","### 阶段小结（题20 所在组之后）\n**整体提示**：本组题概念题占绝大多数，其中高频考点是——领导作用（题1/6）、KANO 三类需求区分（题10）、QFD 屋顶含义（题8）、甘特图 vs 网络图（题16/19）、投诉率≠满意率（题9）、直通率只算一次做对（题13）。计算题务必注意\"机会数×单位产品机会\"和\"返修不计入 FTY\"两个陷阱。","### 阶段小结（题40 所在组之后）\n**整体小结**：这 20 题集中在**D（界定/Define）阶段 + 基础统计分布**，高频考点为——问题陈述的量化（25/28）、质量成本分类（21）、MSA 属性分析（32/40）、正态合成与变换（36/38）、测量尺度（39）。建议把题 33、35、37、38 的易错逻辑重点复习。","### 阶段小结（题70 所在组之后）\n**本组题目的四条主线**：① 假设检验选择树（正态？单双样本？组数？）；② ANOVA 显著只答\"至少一组不同\"；③ 感知质量公式的三段式理解；④ DOE 的分辨率—试验次数换算。这四条都是黑带考试反复出现的高频逻辑。","### 阶段小结（题102 所在组之后）\n**易错题排行**（建议重点回看）：题89（职责归属）、题93（NPV>0 与经济性的关系）、题95（震荡期 vs 形成期）、题100（Y 分解非部门分工）、题101（三不原则）、题102（FMEA 归位）。"]};
+
+</script>
+<script>
+/* 六西格玛黑带 120 题 · 离线答题版
+   数据来自 window.QDATA（由 parse2.py 从讲义 md 生成） */
+(function () {
+  "use strict";
+
+  var D = window.QDATA || { questions: [], tips: [], meta: {} };
+  var QS = D.questions || [];
+  var BY = {};
+  QS.forEach(function (q) { BY[q.id] = q; });
+  var CHS = (D.meta && D.meta.chapters) || [];
+  var CHN = {};
+  CHS.forEach(function (c) { CHN[c.id] = c.name; });
+  var TOTAL = QS.length;
+  var KEY = "sgb120.v1";
+
+  /* ---------------- 状态 ---------------- */
+  var VIEWS = ["practice", "drill", "wrong", "cards", "stats", "sheet"];
+  var S = load();
+  var view = (S.ui && S.ui.mode) || "practice";
+  if (VIEWS.indexOf(view) < 0) view = "practice";
+  var filt = { ch: "all", type: "all", scope: "all" };
+  var deck = { ids: QS.map(function (q) { return q.id; }), pos: 0, round: {}, label: "全部 120 题", custom: false };
+  var pick = { sel: [], done: false, revealed: false };
+  var cardDeck = QS.map(function (q) { return q.id; });
+  var cardIdx = 0, cardOpen = false, cardCh = "all";
+  var searchTerm = "";
+
+  function blank() { return { ans: {}, wrong: {}, fav: {}, hist: [], ui: {} }; }
+  /* 逐条清洗：localStorage 是全机同源共享的，旧版成品可能留下不同 schema 的记录
+     （例如 ans[1] = "C" 字符串），不清洗会在渲染时抛 TypeError → 整页白屏 */
+  function load() {
+    var out = blank(), o, raw;
+    try {
+      raw = localStorage.getItem(KEY);
+      if (!raw) return out;
+      o = JSON.parse(raw);
+    } catch (e) { return out; }
+    if (!o || typeof o !== "object") return out;
+
+    var a = (o.ans && typeof o.ans === "object") ? o.ans : {};
+    Object.keys(a).forEach(function (k) {
+      var id = parseInt(k, 10);
+      if (!(id > 0) || !BY[id]) return;
+      var v = a[k], sel = null, ok = null, ts = 0;
+      if (Array.isArray(v)) sel = v.slice();
+      else if (typeof v === "string") sel = v.split("");
+      else if (v && typeof v === "object") {
+        if (Array.isArray(v.sel)) sel = v.sel.slice();
+        else if (typeof v.sel === "string") sel = v.sel.split("");
+        if (typeof v.ok === "boolean") ok = v.ok;
+        if (typeof v.ts === "number") ts = v.ts;
+      }
+      if (!sel) return;
+      sel = sel.filter(function (x) { return typeof x === "string" && /^[A-E]$/.test(x); });
+      if (!sel.length) return;
+      sel.sort();
+      if (ok === null) ok = sel.join("") === BY[id].answer.slice().sort().join("");
+      out.ans[id] = { sel: sel, ok: ok, ts: ts };
+    });
+
+    var w = (o.wrong && typeof o.wrong === "object") ? o.wrong : {};
+    Object.keys(w).forEach(function (k) {
+      var id = parseInt(k, 10);
+      if (!(id > 0) || !BY[id]) return;
+      var v = w[k], n = 1, ts = 0, fixed = false;
+      if (typeof v === "number") n = v;
+      else if (v && typeof v === "object") {
+        if (typeof v.n === "number" && v.n > 0) n = v.n;
+        if (typeof v.ts === "number") ts = v.ts;
+        fixed = v.fixed === true;
+      }
+      out.wrong[id] = { n: n, ts: ts, fixed: fixed };
+    });
+
+    var f = (o.fav && typeof o.fav === "object") ? o.fav : {};
+    Object.keys(f).forEach(function (k) {
+      var id = parseInt(k, 10);
+      if (id > 0 && BY[id]) out.fav[id] = 1;
+    });
+
+    if (Array.isArray(o.hist)) {
+      out.hist = o.hist.filter(function (h) {
+        return h && typeof h === "object" && BY[h.id];
+      }).map(function (h) {
+        return { id: h.id, ok: h.ok === true, ts: typeof h.ts === "number" ? h.ts : 0 };
+      }).slice(-600);
+    }
+
+    if (o.ui && typeof o.ui === "object") {
+      var ui = {};
+      if (VIEWS.indexOf(o.ui.mode) >= 0) ui.mode = o.ui.mode;
+      if (typeof o.ui.pos === "number" && o.ui.pos >= 0) ui.pos = o.ui.pos;
+      if (o.ui.filt && typeof o.ui.filt === "object") {
+        var fl = { ch: "all", type: "all", scope: "all" };
+        if (o.ui.filt.ch === "all" || CHN[o.ui.filt.ch]) fl.ch = o.ui.filt.ch;
+        if (["all", "single", "multi"].indexOf(o.ui.filt.type) >= 0) fl.type = o.ui.filt.type;
+        if (["all", "todo", "wrong", "fav"].indexOf(o.ui.filt.scope) >= 0) fl.scope = o.ui.filt.scope;
+        ui.filt = fl;
+      }
+      out.ui = ui;
+    }
+    return out;
+  }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({
+        ans: S.ans, wrong: S.wrong, fav: S.fav, hist: S.hist,
+        ui: { mode: view, filt: filt, pos: deck.custom ? 0 : deck.pos }
+      }));
+    } catch (e) {}
+  }
+
+  /* ---------------- 工具 ---------------- */
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function md(t) {
+    if (!t) return "";
+    var s = esc(t);
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/\*\*/g, "").replace(/`([^`]+)`/g, "<code>$1</code>");
+    var lines = s.split("\n"), out = "", inUl = false;
+    function isRow(ln) {
+      var x = ln.trim();
+      return x.length > 2 && x.charAt(0) === "|" && x.charAt(x.length - 1) === "|";
+    }
+    function isSep(ln) { return /^\|[\s:|-]+\|$/.test(ln.trim()) && ln.indexOf("-") >= 0; }
+    function cells(row) {
+      return row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(function (c) { return c.trim(); });
+    }
+    for (var i = 0; i < lines.length; i++) {
+      var ln = lines[i];
+      /* 表格：表头行 + |---|---| 分隔行 + 若干数据行 */
+      if (isRow(ln) && i + 1 < lines.length && isSep(lines[i + 1])) {
+        if (inUl) { out += "</ul>"; inUl = false; }
+        var head = cells(ln), body = [], j = i + 2;
+        while (j < lines.length && isRow(lines[j])) { body.push(cells(lines[j])); j++; }
+        out += '<table class="md-tb"><thead><tr>' +
+          head.map(function (c) { return "<th>" + c + "</th>"; }).join("") + "</tr></thead><tbody>" +
+          body.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>"; }).join("") +
+          "</tbody></table>";
+        i = j - 1;
+        continue;
+      }
+      var m = ln.match(/^\s*[-*]\s+(.*)$/);
+      if (m) {
+        if (!inUl) { out += "<ul>"; inUl = true; }
+        out += "<li>" + m[1] + "</li>";
+      } else {
+        if (inUl) { out += "</ul>"; inUl = false; }
+        if (ln.trim()) out += "<p>" + ln + "</p>";
+      }
+    }
+    if (inUl) out += "</ul>";
+    return out;
+  }
+  function same(a, b) {
+    if (a.length !== b.length) return false;
+    var x = a.slice().sort().join(""), y = b.slice().sort().join("");
+    return x === y;
+  }
+  function pct(a, b) { return b ? Math.round((a / b) * 100) : 0; }
+  function barClass(p) { return p >= 80 ? "" : p >= 60 ? "low" : "bad"; }
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove("show"); }, 1600);
+  }
+
+  /* ---------------- 统计 ---------------- */
+  function overall() {
+    var ids = Object.keys(S.ans), ok = 0;
+    ids.forEach(function (k) { if (S.ans[k].ok) ok++; });
+    var un = 0;
+    Object.keys(S.wrong).forEach(function (k) { if (!S.wrong[k].fixed) un++; });
+    return { answered: ids.length, ok: ok, acc: pct(ok, ids.length), wrongOpen: un, fav: Object.keys(S.fav).length };
+  }
+  function chStat(cid) {
+    var list = QS.filter(function (q) { return q.ch === cid; });
+    var ansN = 0, okN = 0;
+    list.forEach(function (q) {
+      var a = S.ans[q.id];
+      if (a) { ansN++; if (a.ok) okN++; }
+    });
+    return { total: list.length, answered: ansN, ok: okN, acc: pct(okN, ansN) };
+  }
+  function tagStat(tag) {
+    var list = QS.filter(function (q) { return q.tag === tag; });
+    var ansN = 0, okN = 0;
+    list.forEach(function (q) {
+      var a = S.ans[q.id];
+      if (a) { ansN++; if (a.ok) okN++; }
+    });
+    return { total: list.length, answered: ansN, ok: okN, acc: pct(okN, ansN) };
+  }
+
+  /* ---------------- 出题 ---------------- */
+  function buildDeck(opt) {
+    opt = opt || {};
+    var ids = QS.filter(function (q) {
+      if (filt.ch !== "all" && q.ch !== filt.ch) return false;
+      if (filt.type === "single" && q.type === "多选") return false;
+      if (filt.type === "multi" && q.type !== "多选") return false;
+      if (filt.scope === "todo" && S.ans[q.id]) return false;
+      if (filt.scope === "wrong" && !(S.wrong[q.id] && !S.wrong[q.id].fixed)) return false;
+      if (filt.scope === "fav" && !S.fav[q.id]) return false;
+      return true;
+    }).map(function (q) { return q.id; });
+
+    if (opt.shuffle) ids = shuffle(ids);
+    if (opt.limit && ids.length > opt.limit) ids = ids.slice(0, opt.limit);
+    deck = { ids: ids, pos: 0, round: {}, label: labelOf(opt), custom: false };
+    pick = { sel: [], done: false, revealed: false };
+  }
+  function labelOf(opt) {
+    var parts = [];
+    parts.push(filt.ch === "all" ? "全部模块" : CHN[filt.ch]);
+    if (filt.type !== "all") parts.push(filt.type === "single" ? "单选" : "多选");
+    if (filt.scope === "todo") parts.push("未做");
+    if (filt.scope === "wrong") parts.push("错题");
+    if (filt.scope === "fav") parts.push("收藏");
+    if (opt && opt.shuffle) parts.push("乱序");
+    return parts.join(" · ");
+  }
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function curQ() { return deck.ids.length ? BY[deck.ids[deck.pos]] : null; }
+
+  /* ---------------- 答题 ---------------- */
+  function record(id, ok, sel) {
+    S.ans[id] = { sel: sel.slice(), ok: ok, ts: Date.now() };
+    if (ok) {
+      if (S.wrong[id]) { S.wrong[id].fixed = true; }
+    } else {
+      S.wrong[id] = { n: (S.wrong[id] ? S.wrong[id].n : 0) + 1, ts: Date.now(), fixed: false };
+    }
+    S.hist.push({ id: id, ok: ok, ts: Date.now() });
+    if (S.hist.length > 600) S.hist = S.hist.slice(-600);
+    save();
+  }
+  function selectOpt(k) {
+    if (pick.done) return;
+    var q = curQ(); if (!q) return;
+    if (q.type === "多选") {
+      var i = pick.sel.indexOf(k);
+      if (i >= 0) pick.sel.splice(i, 1); else pick.sel.push(k);
+      pick.sel.sort();
+      render();
+    } else {
+      pick.sel = [k];
+      submit();
+    }
+  }
+  function submit() {
+    var q = curQ();
+    if (!q || pick.done || !pick.sel.length) return;
+    var ok = same(pick.sel, q.answer);
+    pick.done = true;
+    deck.round[q.id] = ok;
+    record(q.id, ok, pick.sel);
+    render();
+    var fb = document.getElementById("fb");
+    if (fb && fb.scrollIntoView) {
+      var r = fb.getBoundingClientRect();
+      if (r.top > window.innerHeight - 120 || r.top < 70) fb.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }
+  function reveal() {
+    var q = curQ();
+    if (!q || pick.done) return;
+    pick.done = true; pick.revealed = true;
+    deck.round[q.id] = false;
+    deck.rev = deck.rev || {}; deck.rev[q.id] = 1;
+    record(q.id, false, []);
+    render();
+  }
+  /* 回看已答过的题时，恢复锁定态与解析（否则要重答一遍才能看解析，还会覆盖记录） */
+  function syncPick() {
+    var q = curQ();
+    pick = { sel: [], done: false, revealed: false };
+    if (!q || !Object.prototype.hasOwnProperty.call(deck.round, q.id)) return;
+    var st = S.ans[q.id];
+    pick.sel = st && st.sel ? st.sel.slice() : [];
+    pick.done = true;
+    pick.revealed = !!(deck.rev && deck.rev[q.id]);
+  }
+  function goPos(d) {
+    if (!deck.ids.length) return;
+    var n = deck.pos + d;
+    if (n < 0) n = 0;
+    if (n >= deck.ids.length) { deck.pos = deck.ids.length; pick = { sel: [], done: false, revealed: false }; render(); return; }
+    deck.pos = n;
+    syncPick();
+    save();
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function jumpTo(id) {
+    var i = deck.ids.indexOf(id);
+    if (i < 0) {
+      var chId = BY[id].ch;
+      var sib = QS.filter(function (x) { return x.ch === chId; }).map(function (x) { return x.id; });
+      i = sib.indexOf(id);
+      deck = { ids: sib, pos: i < 0 ? 0 : i, round: {}, label: (CHN[chId] || "") + " · 定位练习", custom: true };
+    } else {
+      deck.pos = i;
+    }
+    pick = { sel: [], done: false, revealed: false };
+    view = "practice"; save(); render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  /* ---------------- 渲染：练习 ---------------- */
+  function hudHTML() {
+    var g = overall();
+    return '<div class="hud">' +
+      '<span>已答 <b>' + g.answered + '</b>/' + TOTAL + '</span><span class="sep"></span>' +
+      '<span>正确率 <b>' + (g.answered ? g.acc + '%' : "—") + '</b></span><span class="sep"></span>' +
+      '<span>错题 <b>' + g.wrongOpen + '</b></span></div>';
+  }
+
+  function filtersHTML() {
+    if (deck.custom) {
+      return '<div class="filters"><span class="tg ty">专项题组</span>' +
+        '<span style="font-size:13px;color:var(--ink2)">' + esc(deck.label) + ' · ' + deck.ids.length + ' 题</span>' +
+        '<span style="flex:1"></span>' +
+        '<button class="btn sm" data-act="shuffle">打乱本组</button>' +
+        '<button class="btn sm" data-act="all">退出，回到筛选练习</button></div>';
+    }
+    var chOpts = '<option value="all">全部模块</option>' + CHS.map(function (c) {
+      var st = chStat(c.id);
+      return '<option value="' + c.id + '"' + (filt.ch === c.id ? " selected" : "") + '>' + esc(c.id + " " + c.name) + "（" + st.total + "题）</option>";
+    }).join("");
+    return '<div class="filters">' +
+      '<span class="sel"><select data-act="fch">' + chOpts + '</select></span>' +
+      '<button class="chip' + (filt.type === "all" ? " on" : "") + '" data-act="ftype" data-v="all">全部题型</button>' +
+      '<button class="chip' + (filt.type === "single" ? " on" : "") + '" data-act="ftype" data-v="single">单选</button>' +
+      '<button class="chip' + (filt.type === "multi" ? " on" : "") + '" data-act="ftype" data-v="multi">多选</button>' +
+      '<span class="fsep"></span>' +
+      '<button class="chip scope' + (filt.scope === "all" ? " on" : "") + '" data-act="fscope" data-v="all">全部</button>' +
+      '<button class="chip scope' + (filt.scope === "todo" ? " on" : "") + '" data-act="fscope" data-v="todo">未做</button>' +
+      '<button class="chip scope' + (filt.scope === "wrong" ? " on" : "") + '" data-act="fscope" data-v="wrong">错题</button>' +
+      '<button class="chip scope' + (filt.scope === "fav" ? " on" : "") + '" data-act="fscope" data-v="fav">收藏</button>' +
+      '<span style="flex:1"></span>' +
+      '<button class="btn sm" data-act="shuffle">打乱本组</button>' +
+      '</div>';
+  }
+
+  function viewPractice() {
+    if (!deck.ids.length) {
+      return filtersHTML() + '<div class="panel empty"><div class="big">这个条件下没有题目</div>' +
+        '<div>换个筛选条件试试，或点下面的按钮回到全部题目</div>' +
+        '<div style="margin-top:16px"><button class="btn primary" data-act="all">回到全部 120 题</button></div></div>';
+    }
+    if (deck.pos >= deck.ids.length) return filtersHTML() + roundSummary();
+
+    var q = curQ();
+    var a = S.ans[q.id];
+    var w = S.wrong[q.id];
+    var isMulti = q.type === "多选";
+
+    var head = '<div class="qhead">' +
+      '<span class="qno">题 ' + q.id + '</span>' +
+      '<span class="tg ty">' + esc(q.type) + '</span>' +
+      '<span class="tg">' + esc(q.tag) + '</span>' +
+      '<span class="tg">' + esc(q.ch + " " + (CHN[q.ch] || "")) + '</span>' +
+      (w && !w.fixed ? '<span class="badge r">错 ' + w.n + ' 次</span>' : "") +
+      (a ? '<span class="badge ' + (a.ok ? "g" : "n") + '">上次' + (a.ok ? "答对" : "答错") + '</span>' : "") +
+      '<button class="star' + (S.fav[q.id] ? " on" : "") + '" data-act="star" data-id="' + q.id + '" title="收藏（F）">' + (S.fav[q.id] ? "★" : "☆") + '</button>' +
+      '</div>';
+
+    var opts = q.options.map(function (o) {
+      var cls = "opt";
+      if (pick.done) {
+        cls += " locked";
+        var isAns = q.answer.indexOf(o.k) >= 0;
+        var isSel = pick.sel.indexOf(o.k) >= 0;
+        if (isAns && isSel) cls += " correct";
+        else if (isAns) cls += " missed";
+        else if (isSel) cls += " wrong";
+      } else if (pick.sel.indexOf(o.k) >= 0) cls += " sel";
+      var mk = "";
+      if (pick.done) {
+        if (q.answer.indexOf(o.k) >= 0 && pick.sel.indexOf(o.k) >= 0) mk = '<span class="mk" style="color:var(--ok)">✓ 正确</span>';
+        else if (q.answer.indexOf(o.k) >= 0) mk = '<span class="mk" style="color:var(--ok)">正确答案</span>';
+        else if (pick.sel.indexOf(o.k) >= 0) mk = '<span class="mk" style="color:var(--bad)">✗ 误选</span>';
+      }
+      return '<button class="' + cls + '" data-act="opt" data-k="' + o.k + '"' + (pick.done ? " disabled" : "") + '>' +
+        '<span class="k">' + o.k + '</span><span class="t">' + md(o.t) + '</span>' + mk + '</button>';
+    }).join("");
+
+    var acts = "";
+    if (!pick.done) {
+      if (isMulti) {
+        var mprev = S.ans[q.id];
+        var mhint = mprev
+          ? "上次选 " + (mprev.sel.length ? mprev.sel.join("") : "未作答") + "（" + (mprev.ok ? "答对" : "答错") + "）· 选出全部正确项后提交"
+          : "多选：选出全部正确项后提交";
+        acts = '<button class="btn primary" data-act="submit"' + (pick.sel.length ? "" : " disabled") + '>提交答案</button>' +
+          '<button class="btn ghost" data-act="reveal">不会，看答案</button>' +
+          '<span class="hint">' + esc(mhint) + '</span>';
+      } else {
+        var prev = S.ans[q.id];
+        var hintTxt = prev
+          ? "上次选 " + (prev.sel.length ? prev.sel.join("") : "未作答") + "（" + (prev.ok ? "答对" : "答错") + "）· 点选项可重做"
+          : "点选项即判题";
+        acts = '<button class="btn ghost" data-act="reveal">不会，看答案</button>' +
+          '<span class="hint">' + esc(hintTxt) + '</span>';
+      }
+    } else {
+      acts = '<button class="btn primary" data-act="next">下一题 →</button>' +
+        '<button class="btn ghost" data-act="prev">← 上一题</button>' +
+        '<button class="btn ghost" data-act="redo">重做本题</button>' +
+        (a && !pick.revealed ? '<span class="hint">本次已记入统计</span>' : '<span class="hint">已按“不会”记入错题本</span>');
+    }
+
+    var fb = pick.done ? feedbackHTML(q) : "";
+    var rowTotal = deck.ids.length;
+    var rowDone = Object.keys(deck.round).length;
+
+    var main = '<div class="panel pad">' + head +
+      '<div class="stem">' + md(q.stem) + '</div>' +
+      '<div class="opts">' + opts + '</div>' +
+      '<div class="acts">' + acts + '</div>' + fb + '</div>' +
+      '<div class="qnav">' +
+      '<button class="btn sm" data-act="prev">← 上一题</button>' +
+      '<button class="btn sm" data-act="next">下一题 →</button>' +
+      '<span class="pos">' + (deck.pos + 1) + " / " + rowTotal + " · " + esc(deck.label) + " · 本轮已答 " + rowDone + '</span>' +
+      '</div>';
+
+    var pctDone = rowTotal ? Math.round((rowDone / rowTotal) * 100) : 0;
+    var dbar = '<div class="deckbar" title="本组进度"><i style="width:' + pctDone + '%"></i></div>';
+    return filtersHTML() + dbar + '<div class="split"><div>' + main + '</div>' + asideHTML(q) + '</div>';
+  }
+
+  function feedbackHTML(q) {
+    var ok = same(pick.sel, q.answer);
+    var stat = S.ans[q.id];
+    var attempted = stat ? stat.sel : [];
+    var ansStr = q.answer.join("");
+    var mineStr = attempted.length ? attempted.join("") : "未作答";
+    var head = '<div class="fb-h">' +
+      '<span class="res">' + (ok ? "✓ 回答正确" : (pick.revealed ? "已看答案（记入错题本）" : "✗ 回答错误")) + '</span>' +
+      '<span style="font-weight:500;font-size:12.5px;opacity:.85">' + (ok || pick.revealed ? "" : "你选 " + esc(mineStr) + " · ") + "正确答案" + '</span>' +
+      '<span class="ans">' + ansStr + '</span></div>';
+
+    var body = "";
+    if (!ok && q.type === "多选" && attempted.length) {
+      var miss = q.answer.filter(function (k) { return attempted.indexOf(k) < 0; });
+      var extra = attempted.filter(function (k) { return q.answer.indexOf(k) < 0; });
+      var bits = [];
+      if (miss.length) bits.push("少选 <b>" + miss.join("、") + "</b>");
+      if (extra.length) bits.push("多选 <b>" + extra.join("、") + "</b>");
+      if (bits.length) body += '<div class="fb-note">' + bits.join("，") + "　多选题必须与正确答案完全一致（不多不少）才算对。</div>";
+    }
+    if (q.analysis) body += blk("解析", '<div class="md">' + md(q.analysis) + "</div>");
+    if (q.note) body += blk("补充注释", '<div class="note md">' + md(q.note) + "</div>");
+    if (q.traps && q.traps.length) {
+      body += blk("易错陷阱", '<ul class="traps">' + q.traps.map(function (t) { return "<li>" + md(t) + "</li>"; }).join("") + "</ul>");
+    }
+    if (q.memory) body += blk("记忆要点", '<div class="memo">' + md(q.memory) + "</div>");
+
+    var rel = QS.filter(function (x) { return x.tag === q.tag && x.id !== q.id; }).slice(0, 6);
+    if (rel.length) {
+      body += blk("同考点", '<div class="rel">' + rel.map(function (x) {
+        return '<button data-act="jump" data-id="' + x.id + '">题' + x.id + '</button>';
+      }).join("") + "</div>");
+    }
+
+    return '<div class="fb ' + (ok ? "ok" : "bad") + '" id="fb" role="status">' + head + '<div class="fb-body">' + body + "</div></div>";
+  }
+  function blk(t, inner) { return '<div class="blk"><div class="blk-t">' + t + "</div>" + inner + "</div>"; }
+
+  function asideHTML(q) {
+    var cells = deck.ids.map(function (id, i) {
+      var cls = "gn";
+      var r = deck.round[id];
+      if (r === true) cls += " ok";
+      else if (r === false) cls += " bad";
+      else if (S.ans[id]) cls += S.ans[id].ok ? " ok" : " bad";
+      else cls += " todo";
+      if (i === deck.pos) cls += " cur";
+      return '<button class="' + cls + '" data-act="gopos" data-i="' + i + '" title="题' + id + '">' + id + "</button>";
+    }).join("");
+    var g = overall();
+    return '<aside class="aside">' +
+      '<div class="panel pad"><h3 class="side-t">本组题号（' + deck.ids.length + '）</h3><div class="gridno">' + cells + "</div>" +
+      '<div class="legend"><span><i style="background:var(--ok-soft);border:1px solid #bcdccb"></i>答对</span>' +
+      '<span><i style="background:var(--bad-soft);border:1px solid #eec9c3"></i>答错</span>' +
+      '<span><i style="background:#fbfbf7;border:1px solid var(--line2)"></i>未做</span></div></div>' +
+      '<div class="panel pad"><h3 class="side-t">总进度</h3><div class="mini">' +
+      '<div><b>' + g.answered + "</b><span>已答 / " + TOTAL + "</span></div>" +
+      '<div><b>' + (g.answered ? g.acc + "%" : "—") + "</b><span>正确率</span></div>" +
+      '<div><b>' + g.wrongOpen + "</b><span>待订正</span></div>" +
+      '<div><b>' + g.fav + "</b><span>收藏</span></div></div></div>" +
+      '<div class="panel pad"><h3 class="side-t">快捷键</h3>' +
+      '<div class="hint" style="line-height:2"><span class="kbd">A</span>–<span class="kbd">D</span> 选答案 · <span class="kbd">Enter</span> 提交/下一题<br>' +
+      '<span class="kbd">←</span> <span class="kbd">→</span> 切题 · <span class="kbd">S</span> 看答案 · <span class="kbd">F</span> 收藏</div></div>' +
+      "</aside>";
+  }
+
+  function roundSummary() {
+    var ids = Object.keys(deck.round);
+    var ok = ids.filter(function (k) { return deck.round[k]; }).length;
+    var bad = ids.length - ok;
+    var wrongList = ids.filter(function (k) { return !deck.round[k]; });
+    var left = deck.ids.length - ids.length;
+    if (left < 0) left = 0;
+
+    var statusHTML = "";
+    if (left > 0) statusHTML = '<div style="margin-top:12px;color:var(--amber);font-weight:600">还有 ' + left + " 题没做，本组未完成</div>";
+    else if (!ids.length) statusHTML = '<div style="margin-top:12px;color:var(--ink2);font-weight:600">这一组还没开始作答</div>';
+    else if (!bad) statusHTML = '<div style="margin-top:12px;color:var(--ok);font-weight:600">全对，这一组可以过了</div>';
+
+    var chips = wrongList.length ? '<div style="margin-top:14px" class="rel">' + wrongList.slice(0, 30).map(function (id) {
+      return '<button data-act="jump" data-id="' + id + '">题' + id + '</button>';
+    }).join("") + "</div>" : "";
+
+    /* 未做完时大字显示「已答/总数」而不是百分比，避免把部分正确率误读成本组成绩 */
+    var bigTxt = left > 0 ? (ids.length + " / " + deck.ids.length) : (ids.length ? pct(ok, ids.length) + "%" : "—");
+    var subTxt = left > 0 ? ("已答 " + ids.length + " 题 · 对 " + ok + " · 错 " + bad)
+      : ("答 " + ids.length + " 题 · 对 " + ok + " · 错 " + bad);
+
+    return '<div class="panel pad" style="text-align:center;padding:36px 24px">' +
+      '<div style="font-size:13px;letter-spacing:.12em;color:var(--ink3);font-weight:800">本轮结束 · ' + esc(deck.label) + '</div>' +
+      '<div style="font-size:44px;font-weight:800;letter-spacing:-.03em;margin:8px 0 2px">' + bigTxt + '</div>' +
+      '<div style="color:var(--ink2);font-size:13.5px">' + subTxt + '</div>' +
+      chips + statusHTML +
+      '<div class="acts" style="justify-content:center;margin-top:22px">' +
+      '<button class="btn primary" data-act="restart">再来一轮</button>' +
+      (wrongList.length ? '<button class="btn" data-act="wrongredo" data-round="1">练本轮错题（' + wrongList.length + '）</button>' : "") +
+      '<button class="btn ghost" data-act="mode" data-v="stats">看统计</button></div></div>';
+  }
+
+  /* ---------------- 渲染：考点 ---------------- */
+  function viewDrill() {
+    var cards = CHS.map(function (c) {
+      var st = chStat(c.id);
+      return '<button class="chcard" data-act="drill" data-ch="' + c.id + '">' +
+        '<div class="nm">' + esc(c.name) + '</div>' +
+        '<div class="meta">' + c.id + " · " + st.total + " 题 · 已答 " + st.answered + (st.answered ? " · 正确率 " + st.acc + "%" : "") + '</div>' +
+        '<div class="bar"><i class="' + barClass(st.acc) + '" style="width:' + (st.answered ? st.acc : 0) + '%"></i></div>' +
+        "</button>";
+    }).join("");
+
+    var allTags = {};
+    QS.forEach(function (q) { allTags[q.tag] = 1; });
+    var tagHTML = CHS.map(function (c) {
+      var seen = {}, list = [];
+      QS.forEach(function (q) {
+        if (q.ch === c.id && !seen[q.tag]) { seen[q.tag] = 1; list.push(q.tag); }
+      });
+      if (!list.length) return "";
+      return '<div class="taggroup"><h4>' + esc(c.id + " " + c.name) + '</h4><div class="tagcloud">' +
+        list.map(function (t) {
+          var st = tagStat(t);
+          var cls = st.answered ? (st.acc >= 80 ? "g" : "r") : "";
+          return '<button class="tagbtn" data-act="starttag" data-v="' + esc(t) + '">' + esc(t) +
+            '<span class="acc ' + cls + '">' + st.total + "题" + (st.answered ? " · " + st.acc + "%" : "") + "</span></button>";
+        }).join("") + "</div></div>";
+    }).join("");
+
+    return '<h1 class="h1">按模块 / 考点出题</h1>' +
+      '<p class="sub">点模块进入该模块的整组练习；点下方考点标签，只练这一考点（标签右侧为该考点题数/正确率）。</p>' +
+      '<div class="cards">' + cards + "</div>" +
+      '<div class="panel pad" style="margin-top:18px"><h3 class="side-t">全部考点（' + Object.keys(allTags).length + ' 个，按模块分组）</h3>' + tagHTML + "</div>" +
+      '<div class="panel pad" style="margin-top:14px"><h3 class="side-t">按薄弱度快速切入</h3>' +
+      '<div class="acts">' +
+      '<button class="btn" data-act="weak25">最薄弱 25 题</button>' +
+      '<button class="btn" data-act="random20">随机 20 题</button>' +
+      '<button class="btn" data-act="todo20">未做的前 20 题</button>' +
+      "</div></div>";
+  }
+
+  /* ---------------- 渲染：错题 ---------------- */
+  function viewWrong() {
+    var rows = QS.filter(function (q) { return S.wrong[q.id]; })
+      .sort(function (a, b) { return (S.wrong[b.id].ts || 0) - (S.wrong[a.id].ts || 0); });
+    if (!rows.length) {
+      return '<h1 class="h1">错题本</h1><p class="sub">答错或点“不会”的题会自动进这里；答对一次即标记为已订正。</p>' +
+        '<div class="panel empty"><div class="big">还没有错题</div><div>去练习页做几题，错题会自动收集。</div>' +
+        '<div style="margin-top:16px"><button class="btn primary" data-act="mode" data-v="practice">开始练习</button></div></div>';
+    }
+    var open = rows.filter(function (q) { return !S.wrong[q.id].fixed; });
+    var list = rows.map(function (q) {
+      var w = S.wrong[q.id], a = S.ans[q.id];
+      return '<div class="wrow"><div class="id">' + q.id + '</div><div class="bd">' +
+        '<div class="st">' + esc(q.stem).replace(/\*\*/g, "") + "</div>" +
+        '<div class="mt"><span class="badge ' + (w.fixed ? "g" : "r") + '">' + (w.fixed ? "已订正" : "错 " + w.n + " 次") + "</span>" +
+        '<span>答案 ' + q.answer.join("") + (a && a.sel.length ? " · 上次选 " + a.sel.join("") : "") + "</span>" +
+        '<span class="tg">' + esc(q.tag) + "</span>" +
+        '<button class="btn sm" data-act="jump" data-id="' + q.id + '">重做</button></div>' +
+        "</div></div>";
+    }).join("");
+    return '<h1 class="h1">错题本</h1>' +
+      '<p class="sub">共 ' + rows.length + " 条，其中 <b>" + open.length + "</b> 条未订正。</p>" +
+      '<div class="acts" style="margin-bottom:14px">' +
+      '<button class="btn primary" data-act="wrongredo">重练未订正（' + open.length + '）</button>' +
+      '<button class="btn" data-act="wrongall">练全部错题（' + rows.length + '）</button></div>' +
+      '<div class="panel pad">' + list + "</div>";
+  }
+
+  /* ---------------- 渲染：速记卡 ---------------- */
+  function viewCards() {
+    if (!cardDeck.length) return '<div class="panel empty">没有卡片</div>';
+    if (cardIdx >= cardDeck.length) cardIdx = 0;
+    var q = BY[cardDeck[cardIdx]];
+    var opts = q.options.map(function (o) {
+      var cls = "";
+      return '<div class="row"><span class="k">' + o.k + "</span><span>" + md(o.t) + "</span></div>";
+    }).join("");
+    var ans = cardOpen ? '<div class="fans"><div class="lab">正确答案 ' + q.answer.join("") + "</div>" +
+      q.answer.map(function (k) {
+        var o = q.options.filter(function (x) { return x.k === k; })[0];
+        return '<div class="ao">' + md(o ? o.t : "") + "</div>";
+      }).join("") +
+      (q.memory ? '<div class="memo" style="margin-top:14px">' + md(q.memory) + "</div>" : "") +
+      (q.traps && q.traps.length ? '<ul class="traps" style="margin-top:10px">' + q.traps.map(function (t) { return "<li>" + md(t) + "</li>"; }).join("") + "</ul>" : "") +
+      "</div>" : "";
+
+    return '<h1 class="h1">速记卡</h1>' +
+      '<p class="sub">先自己回想答案，再翻面对照“记忆要点 + 易错陷阱”。适合考前 20 分钟过一遍。</p>' +
+      '<div class="filters">' +
+      '<button class="chip' + (cardCh === "all" ? " on" : "") + '" data-act="cardch" data-v="all">全部</button>' +
+      CHS.map(function (c) {
+        return '<button class="chip' + (cardCh === c.id ? " on" : "") + '" data-act="cardch" data-v="' + c.id + '">' + esc(c.name) + "</button>";
+      }).join("") +
+      "</div>" +
+      '<div class="flash">' +
+      '<div class="qhead"><span class="qno">题 ' + q.id + '</span><span class="tg ty">' + esc(q.type) + '</span><span class="tg">' + esc(q.tag) + "</span>" +
+      '<span style="margin-left:auto;font-size:12px;color:var(--ink3)">' + (cardIdx + 1) + " / " + cardDeck.length + "</span></div>" +
+      '<div class="fq">' + md(q.stem) + "</div>" +
+      '<div class="fopts">' + opts + "</div>" + ans + "</div>" +
+      '<div class="qnav">' +
+      '<button class="btn sm" data-act="cardprev">← 上一张</button>' +
+      '<button class="btn primary" data-act="cardflip">' + (cardOpen ? "收起" : "翻面看答案") + "</button>" +
+      '<button class="btn sm" data-act="cardnext">下一张 →</button>' +
+      '<button class="btn sm ghost" data-act="cardjump" data-id="' + q.id + '" style="margin-left:auto">去精做这题</button>' +
+      "</div>";
+  }
+
+  /* ---------------- 渲染：统计 ---------------- */
+  function viewStats() {
+    var g = overall();
+    var chRows = CHS.map(function (c) {
+      var st = chStat(c.id);
+      var col = st.answered ? (st.acc >= 80 ? "var(--ok)" : st.acc >= 60 ? "var(--amber)" : "var(--bad)") : "var(--ink3)";
+      return '<tr data-act="drill" data-ch="' + c.id + '" tabindex="0" role="button" style="cursor:pointer">' +
+        "<td>" + esc(c.name) + '<span style="color:var(--ink3);font-size:11.5px"> · ' + c.id + "</span></td>" +
+        '<td class="r">' + st.total + "</td><td class=\"r\">" + st.answered + "</td>" +
+        '<td class="r"><div class="cellbar"><span style="font-weight:700;color:' + col + '">' + (st.answered ? st.acc + "%" : "—") +
+        '</span><div class="bar"><i class="' + barClass(st.acc) + '" style="width:' + (st.answered ? st.acc : 0) + '%"></i></div></div></td></tr>';
+    }).join("");
+
+    var tagMap = {};
+    QS.forEach(function (q) { (tagMap[q.tag] = tagMap[q.tag] || []).push(q); });
+    var weak = Object.keys(tagMap).map(function (t) {
+      var st = tagStat(t), wrongN = 0, wrongOpen = 0;
+      tagMap[t].forEach(function (q) {
+        var w = S.wrong[q.id];
+        if (w) { wrongN += w.n; if (!w.fixed) wrongOpen++; }
+      });
+      return { tag: t, st: st, wrongN: wrongN, wrongOpen: wrongOpen };
+    }).filter(function (x) {
+      return x.st.answered > 0 && (x.st.acc < 100 || x.wrongN > 0);
+    }).sort(function (a, b) {
+      return b.wrongOpen - a.wrongOpen || b.wrongN - a.wrongN ||
+        a.st.acc - b.st.acc || b.st.answered - a.st.answered;
+    }).slice(0, 12);
+
+    var weakHTML = weak.length ? weak.map(function (x) {
+      var label = (x.wrongN ? "错 " + x.wrongN + " 次 · " : "") + x.st.acc + "% · 共" + x.st.total;
+      return '<button class="tagbtn" data-act="starttag" data-v="' + esc(x.tag) + '">' + esc(x.tag) +
+        '<span class="acc ' + (x.st.acc >= 80 && !x.wrongOpen ? "g" : "r") + '">' + label + "</span></button>";
+    }).join("") : '<span class="hint">' + (g.answered ? "答过的考点目前没有错题，去练没做过的题" : "还没有作答记录") + "</span>";
+
+    var hist = S.hist.slice(-14).reverse().map(function (h) {
+      var d = new Date(h.ts);
+      var hh = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+      return '<div class="wrow" style="padding:7px 0"><div class="id">' + h.id + '</div><div class="bd" style="display:flex;gap:10px;align-items:center">' +
+        '<span class="badge ' + (h.ok ? "g" : "r") + '">' + (h.ok ? "对" : "错") + "</span>" +
+        '<span style="font-size:12.5px;color:var(--ink2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+        esc((BY[h.id] ? BY[h.id].stem : "").replace(/\*\*/g, "").slice(0, 42)) + "</span>" +
+        '<span style="font-size:11.5px;color:var(--ink3)">' + hh + "</span></div></div>";
+    }).join("");
+
+    return '<h1 class="h1">学习统计</h1><p class="sub">正确率按“最近一次作答”计算，重复练习会覆盖旧结果；错题本按累计错误次数计数。</p>' +
+      adviceHTML() +
+      '<div class="cards" style="margin-bottom:16px">' +
+      statCard(g.answered + "/" + TOTAL, "已答进度") +
+      statCard(g.answered ? g.acc + "%" : "—", "总体正确率") +
+      statCard(String(g.wrongOpen), "待订正错题") +
+      statCard(String(g.fav), "收藏题数") +
+      "</div>" +
+      '<div class="panel pad" style="margin-bottom:14px"><h3 class="side-t">按模块（点行直接练该模块）</h3>' +
+      '<table class="tb"><thead><tr><th>模块</th><th class="r">题数</th><th class="r">已答</th><th class="r">正确率</th></tr></thead><tbody>' + chRows + "</tbody></table></div>" +
+      '<div class="panel pad" style="margin-bottom:14px"><h3 class="side-t">最需要补的考点（点一下直接练）</h3><div class="tagcloud">' + weakHTML + "</div></div>" +
+      '<div class="panel pad" style="margin-bottom:14px"><h3 class="side-t">最近作答</h3>' + (hist || '<span class="hint">暂无</span>') + "</div>" +
+      '<div class="panel pad"><h3 class="side-t">数据</h3><div class="acts">' +
+      '<button class="btn sm" data-act="export">导出记录（JSON）</button>' +
+      '<button class="btn sm" data-act="import">导入记录（JSON）</button>' +
+      '<button class="btn sm danger" data-act="reset">清空全部记录</button>' +
+      '<input type="file" id="importfile" accept=".json,application/json" style="display:none">' +
+      '<span class="hint">记录只存在本机浏览器，换浏览器或清缓存会丢失；换设备用「导出/导入」搬。</span></div></div>';
+  }
+  function adviceHTML() {
+    var g = overall(), items = [];
+    var weak = CHS.map(function (c) { return { c: c, st: chStat(c.id) }; })
+      .filter(function (x) { return x.st.answered >= 2; })
+      .sort(function (a, b) { return a.st.acc - b.st.acc; })[0];
+    if (weak && weak.st.acc < 85) {
+      items.push({
+        t: "最弱模块：<b>" + esc(weak.c.name) + "</b>　正确率 " + weak.st.acc + "%（已答 " + weak.st.answered + "/" + weak.st.total + "）",
+        act: "drill", ch: weak.c.id, btn: "练这个模块"
+      });
+    }
+    if (g.wrongOpen) items.push({ t: "有 <b>" + g.wrongOpen + "</b> 道错题还没订正", act: "wrongredo", btn: "重练错题" });
+    if (g.answered < TOTAL) items.push({ t: "还有 <b>" + (TOTAL - g.answered) + "</b> 道题没做过", act: "todo20", btn: "做未做的 20 题" });
+    if (!items.length) items.push({ t: "全部答过且没有待订正错题——建议用「速记卡」和「速查」过一遍记忆要点", act: "mode2", v: "cards", btn: "去速记卡" });
+    return '<div class="panel pad" style="margin-bottom:14px"><h3 class="side-t">建议下一步</h3>' +
+      items.map(function (x) {
+        var act = x.act === "mode2" ? "mode" : x.act;
+        return '<div class="wrow" style="align-items:center;padding:9px 0"><div class="bd" style="font-size:13.8px;line-height:1.6">' + x.t + "</div>" +
+          '<button class="btn sm" data-act="' + act + '"' + (x.ch ? ' data-ch="' + x.ch + '"' : "") + (x.v ? ' data-v="' + x.v + '"' : "") + ">" + x.btn + "</button></div>";
+      }).join("") + "</div>";
+  }
+
+  function statCard(v, l) { return '<div class="panel pad"><div style="font-size:26px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums">' + esc(v) + '</div><div style="font-size:11.5px;color:var(--ink3)">' + l + "</div></div>"; }
+
+  /* ---------------- 渲染：速查 ---------------- */
+  function sheetResults(term) {
+    var hit = QS.filter(function (q) {
+      if (!term) return true;
+      var blob = [q.stem, q.tag, q.memory, (q.traps || []).join(""), q.note, q.analysis].join(" ").toLowerCase();
+      return blob.indexOf(term.toLowerCase()) >= 0;
+    });
+    var groups = CHS.map(function (c) {
+      var list = hit.filter(function (q) { return q.ch === c.id; });
+      if (!list.length) return "";
+      var rows = list.map(function (q) {
+        return '<div class="sheet-row"><div class="id" data-act="jump" data-id="' + q.id + '">' + q.id + '</div><div class="tx">' +
+          "<b>答案 " + q.answer.join("") + "</b> · " + md(q.memory || "") +
+          (q.traps && q.traps.length ? '<div class="hint" style="margin-top:2px">陷阱：' + esc(q.traps.join("；")) + "</div>" : "") +
+          '<span class="tg">' + esc(q.tag) + "</span></div></div>";
+      }).join("");
+      return '<div class="sheet-blk"><h3 class="side-t">' + esc(c.id + " " + c.name) + "（" + list.length + "）</h3>" + rows + "</div>";
+    }).join("");
+    return (groups || '<div class="panel empty">没有匹配的内容</div>') +
+      '<div class="hint" style="margin-top:6px">命中 ' + hit.length + " 题</div>";
+  }
+
+  function viewSheet() {
+    var tipsHTML = (D.tips || []).map(function (t) {
+      var title = t.split("\n")[0].replace(/^#+\s*/, "");
+      var rest = t.split("\n").slice(1).join("\n").trim();
+      return '<details class="tipbox"><summary>' + esc(title) + '</summary><div class="md">' + md(rest) + "</div></details>";
+    }).join("");
+
+    return '<h1 class="h1">考点速查</h1>' +
+      '<p class="sub">全部 120 题的“记忆要点 + 易错陷阱”汇总，按模块分组。考前扫一遍，比重做一遍更划算。想打印成纸质清单：Ctrl/⌘+P，折叠块会自动展开。</p>' +
+      tipsHTML +
+      '<div class="search"><input id="qsearch" type="search" placeholder="搜关键词：Cp / 分辨率 / 震荡期 / GRR…" value="' + esc(searchTerm.trim()) + '"></div>' +
+      '<div id="sheetres">' + sheetResults(searchTerm.trim()) + "</div>";
+  }
+
+  /* ---------------- 主渲染 ---------------- */
+  function render() {
+    var app = document.getElementById("app");
+    document.getElementById("hud").innerHTML = hudHTML();
+    Array.prototype.forEach.call(document.querySelectorAll(".modes button"), function (b) {
+      b.classList.toggle("on", b.getAttribute("data-v") === view);
+    });
+    var html = "";
+    if (view === "practice") html = viewPractice();
+    else if (view === "drill") html = viewDrill();
+    else if (view === "wrong") html = viewWrong();
+    else if (view === "cards") html = viewCards();
+    else if (view === "stats") html = viewStats();
+    else if (view === "sheet") html = viewSheet();
+    app.innerHTML = html;
+    var si = document.getElementById("qsearch");
+    if (si) {
+      si.addEventListener("input", function () {
+        searchTerm = si.value;
+        var box = document.getElementById("sheetres");
+        if (box) box.innerHTML = sheetResults(searchTerm.trim());
+      });
+    }
+  }
+
+  /* ---------------- 事件 ---------------- */
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-act]");
+    if (!t) return;
+    var act = t.getAttribute("data-act");
+    var q;
+
+    switch (act) {
+      case "mode":
+        view = t.getAttribute("data-v"); save();
+        if (view === "cards") { cardOpen = false; buildCards(); }
+        render(); window.scrollTo({ top: 0, behavior: "smooth" }); break;
+      case "opt": selectOpt(t.getAttribute("data-k")); break;
+      case "submit": submit(); break;
+      case "reveal": reveal(); break;
+      case "next": goPos(1); break;
+      case "prev": goPos(-1); break;
+      case "gopos":
+        deck.pos = parseInt(t.getAttribute("data-i"), 10);
+        syncPick(); save(); render();
+        window.scrollTo({ top: 0, behavior: "smooth" }); break;
+      case "redo":
+        pick = { sel: [], done: false, revealed: false };
+        var rq = curQ();
+        if (rq && deck.rev) delete deck.rev[rq.id];
+        render(); break;
+      case "star":
+        q = parseInt(t.getAttribute("data-id"), 10);
+        if (S.fav[q]) delete S.fav[q]; else S.fav[q] = 1;
+        save();
+        if (filt.scope === "fav" && !S.fav[q]) { buildDeck(); }
+        render(); toast(S.fav[q] ? "已收藏" : "已取消收藏"); break;
+      case "jump": jumpTo(parseInt(t.getAttribute("data-id"), 10)); break;
+      case "ftype": filt.type = t.getAttribute("data-v"); buildDeck(); render(); break;
+      case "fscope":
+        var sv = t.getAttribute("data-v");
+        filt.scope = (sv === "all" || filt.scope === sv) ? "all" : sv;
+        buildDeck(); render(); break;
+      case "shuffle":
+        if (deck.custom) { deck.ids = shuffle(deck.ids); deck.pos = 0; deck.round = {}; pick = { sel: [], done: false, revealed: false }; }
+        else { buildDeck({ shuffle: true }); }
+        render(); toast("已打乱本组顺序"); break;
+      case "all":
+        filt = { ch: "all", type: "all", scope: "all" }; buildDeck(); render(); break;
+      case "restart":
+        deck.ids = shuffle(deck.ids); deck.pos = 0; deck.round = {};
+        pick = { sel: [], done: false, revealed: false }; render(); break;
+      case "drill":
+        filt = { ch: t.getAttribute("data-ch"), type: "all", scope: "all" };
+        buildDeck(); view = "practice"; save(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); break;
+      case "starttag":
+        var tg = t.getAttribute("data-v");
+        filt = { ch: "all", type: "all", scope: "all" };
+        var ids = QS.filter(function (x) { return x.tag === tg; }).map(function (x) { return x.id; });
+        deck = { ids: ids, pos: 0, round: {}, label: "考点：" + tg, custom: true };
+        pick = { sel: [], done: false, revealed: false };
+        view = "practice"; save(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); break;
+      case "wrongredo":
+        if (t.getAttribute("data-round") === "1") {
+          var rw = Object.keys(deck.round).filter(function (k) { return !deck.round[k]; })
+            .map(function (k) { return parseInt(k, 10); })
+            .filter(function (id) { return !!BY[id]; });
+          if (rw.length) {
+            deck = { ids: rw, pos: 0, round: {}, label: "本轮错题（" + rw.length + "）", custom: true };
+            pick = { sel: [], done: false, revealed: false };
+            view = "practice"; save(); render();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            break;
+          }
+        }
+        filt = { ch: "all", type: "all", scope: "wrong" }; buildDeck(); view = "practice"; save(); render();
+        window.scrollTo({ top: 0, behavior: "smooth" }); break;
+      case "wrongall":
+        var wids = QS.filter(function (x) { return S.wrong[x.id]; }).map(function (x) { return x.id; });
+        deck = { ids: wids, pos: 0, round: {}, label: "全部错题", custom: true };
+        pick = { sel: [], done: false, revealed: false };
+        view = "practice"; save(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); break;
+      case "weak25":
+        var scored = QS.map(function (x) {
+          var a = S.ans[x.id], w = S.wrong[x.id];
+          var sc = (a ? (a.ok ? 0 : 3) : 1) + (w ? Math.min(w.n, 3) : 0);
+          return { id: x.id, sc: sc };
+        }).sort(function (a, b) { return b.sc - a.sc; }).slice(0, 25).map(function (x) { return x.id; });
+        deck = { ids: scored, pos: 0, round: {}, label: "最薄弱 25 题", custom: true };
+        pick = { sel: [], done: false, revealed: false };
+        view = "practice"; save(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); break;
+      case "random20":
+        deck = { ids: shuffle(QS.map(function (x) { return x.id; })).slice(0, 20), pos: 0, round: {}, label: "随机 20 题", custom: true };
+        pick = { sel: [], done: false, revealed: false };
+        view = "practice"; save(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); break;
+      case "todo20":
+        deck = { ids: QS.filter(function (x) { return !S.ans[x.id]; }).map(function (x) { return x.id; }).slice(0, 20), pos: 0, round: {}, label: "未做 20 题", custom: true };
+        pick = { sel: [], done: false, revealed: false };
+        view = "practice"; save(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); break;
+      case "cardnext": if (cardDeck.length) { cardIdx = (cardIdx + 1) % cardDeck.length; } cardOpen = false; render(); break;
+      case "cardprev": if (cardDeck.length) { cardIdx = (cardIdx - 1 + cardDeck.length) % cardDeck.length; } cardOpen = false; render(); break;
+      case "cardflip": cardOpen = !cardOpen; render(); break;
+      case "cardch":
+        cardCh = t.getAttribute("data-v"); buildCards(); cardIdx = 0; cardOpen = false; render(); break;
+      case "cardjump": jumpTo(parseInt(t.getAttribute("data-id"), 10)); break;
+      case "export":
+        var blob = new Blob([JSON.stringify({ ans: S.ans, wrong: S.wrong, fav: S.fav, hist: S.hist }, null, 1)], { type: "application/json" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "六西格玛120题-学习记录.json"; a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+        break;
+      case "import":
+        var fi = document.getElementById("importfile");
+        if (fi) fi.click();
+        else toast("导入控件未就绪，请刷新后再试");
+        break;
+      case "reset":
+        if (confirm("确定清空全部作答记录、错题本和收藏？此操作不可撤销。")) {
+          S = { ans: {}, wrong: {}, fav: {}, hist: [], ui: { mode: "practice" } };
+          save(); buildDeck(); render(); toast("已清空");
+        }
+        break;
+    }
+  });
+  document.addEventListener("change", function (e) {
+    if (e.target.getAttribute("data-act") === "fch") {
+      filt.ch = e.target.value; buildDeck(); render();
+    }
+    if (e.target.id === "importfile") {
+      var f = e.target.files && e.target.files[0];
+      if (!f) return;
+      var rd = new FileReader();
+      rd.onload = function () {
+        var o;
+        try { o = JSON.parse(String(rd.result)); } catch (err) { toast("导入失败：不是有效的 JSON"); return; }
+        if (!o || typeof o !== "object" || !(o.ans || o.wrong || o.fav || o.hist)) { toast("导入失败：不是本页导出的记录文件"); return; }
+        if (!confirm("导入会覆盖当前全部作答记录、错题本和收藏，确定？")) return;
+        try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (err) { toast("导入失败：浏览器拒绝写入"); return; }
+        location.reload();
+      };
+      rd.readAsText(f);
+    }
+  });
+
+  function buildCards() {
+    cardDeck = QS.filter(function (q) { return cardCh === "all" || q.ch === cardCh; }).map(function (q) { return q.id; });
+    if (cardIdx >= cardDeck.length) cardIdx = 0;
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;   // Ctrl/⌘/Alt 组合键交还浏览器（Ctrl+A 全选、Ctrl+F 查找）
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+    if (e.target.isContentEditable) return;
+    var k = e.key.toUpperCase();
+    if (view === "practice" && deck.ids.length && deck.pos < deck.ids.length) {
+      var q = curQ();
+      if (!pick.done) {
+        if ("ABCD".indexOf(k) >= 0 && k.length === 1) { e.preventDefault(); selectOpt(k); return; }
+        if (k.length === 1 && "1234".indexOf(k) >= 0) { e.preventDefault(); selectOpt("ABCD".charAt(parseInt(k, 10) - 1)); return; }
+        if (e.key === "Enter" && q && q.type === "多选") { e.preventDefault(); submit(); return; }
+        if (k === "S") { e.preventDefault(); reveal(); return; }
+      } else if (e.key === "Enter" || e.key === "ArrowRight") { e.preventDefault(); goPos(1); return; }
+      if (e.key === "ArrowLeft") { e.preventDefault(); goPos(-1); return; }
+      if (k === "F") { e.preventDefault(); if (S.fav[q.id]) delete S.fav[q.id]; else S.fav[q.id] = 1; save(); render(); return; }
+    }
+    if (view === "cards") {
+      if (e.key === " ") { e.preventDefault(); cardOpen = !cardOpen; render(); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); cardIdx = (cardIdx + 1) % cardDeck.length; cardOpen = false; render(); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); cardIdx = (cardIdx - 1 + cardDeck.length) % cardDeck.length; cardOpen = false; render(); }
+    }
+
+  });
+
+  /* ---------------- 启动 ---------------- */
+  // 打印时自动展开折叠的提示块（Chrome 下 CSS 无法强制展开 details）
+  window.addEventListener("beforeprint", function () {
+    Array.prototype.forEach.call(document.querySelectorAll("details"), function (d) {
+      if (!d.open) { d.classList.add("was-closed"); d.open = true; }
+    });
+  });
+  window.addEventListener("afterprint", function () {
+    Array.prototype.forEach.call(document.querySelectorAll("details.was-closed"), function (d) {
+      d.open = false; d.classList.remove("was-closed");
+    });
+  });
+
+  buildCards();
+  // 恢复上次的筛选条件与题号（专项/临时题组不恢复，避免题组对不上）
+  if (S.ui && S.ui.filt) filt = S.ui.filt;
+  buildDeck();
+  if (S.ui && typeof S.ui.pos === "number" && S.ui.pos > 0 && S.ui.pos < deck.ids.length) deck.pos = S.ui.pos;
+  syncPick();
+  render();
+})();
+
+</script>
+</body>
+</html>
